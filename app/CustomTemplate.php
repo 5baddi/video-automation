@@ -34,4 +34,24 @@ class CustomTemplate extends Model
     protected $casts = [
         'vau_id'   => 'integer',
     ];
+
+    /**
+     * Retrive render jobs
+     *
+     * @return App\RenderJob
+     */
+    public function jobs()
+    {
+        return $this->hasMany(RenderJob::class);
+    }
+
+    /**
+     * Retrive template medias
+     *
+     * @return App\TemplateMedia
+     */
+    public function medias()
+    {
+        return $this->hasMany(TemplateMedia::class);
+    }
 }

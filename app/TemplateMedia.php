@@ -19,7 +19,7 @@ class TemplateMedia extends Model
      * @var array
      */
     protected $fillable = [
-        'name',
+        'placeholder',
         'type',
         'color',
         'default'
@@ -35,4 +35,14 @@ class TemplateMedia extends Model
         'position'          => 'integer',
         'background_hue'    => 'smallInteger',
     ];
+
+    /**
+     * Retrive parent template
+     *
+     * @return App\CustomTemplate
+     */
+    public function template()
+    {
+        return $this->belongTo(CustomTemplate::class);
+    }
 }

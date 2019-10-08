@@ -31,8 +31,18 @@ class RenderJob extends Model
      */
     protected $casts = [
         'template_id'   => 'integer',
-        'job_id'        => 'integer',
+        'vau_job_id'    => 'integer',
         'progress'      => 'integer',
-        'left'          => 'integer'
+        'left_seconds'  => 'integer'
     ];
+
+    /**
+     * Retrive parent object
+     *
+     * @return App\CustomTemplate
+     */
+    public function template()
+    {
+        return $this->belongsTo(CustomTemplate::class);
+    }
 }
