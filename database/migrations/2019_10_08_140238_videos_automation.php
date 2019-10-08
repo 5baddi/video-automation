@@ -14,7 +14,7 @@ class VideosAutomation extends Migration
     public function up()
     {
         // Custom templates
-        Schema::connection('mysql_va')->create('custom_templates', function (Blueprint $table) {
+        Schema::create('custom_templates', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('vau_id')->nullable(false);
             $table->string('name')->unique()->nullable(false);
@@ -26,7 +26,7 @@ class VideosAutomation extends Migration
         });
 
         // Template medias
-        Schema::connection('mysql_va')->create('template_medias', function (Blueprint $table) {
+        Schema::create('template_medias', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('template_id');
             $table->string('name')->nullable(false);
@@ -39,7 +39,7 @@ class VideosAutomation extends Migration
         });
 
         // Render jobs
-        Schema::connection('mysql_va')->create('render_jobs', function (Blueprint $table) {
+        Schema::create('render_jobs', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('template_id');
             $table->unsignedBigInteger('job_id');
@@ -60,8 +60,8 @@ class VideosAutomation extends Migration
      */
     public function down()
     {
-        Schema::connection('mysql_va')->dropIfExists('custom_templates');
-        Schema::connection('mysql_va')->dropIfExists('template_medias');
-        Schema::connection('mysql_va')->dropIfExists('render_jobs');
+        Schema::dropIfExists('custom_templates');
+        Schema::dropIfExists('template_medias');
+        Schema::dropIfExists('render_jobs');
     }
 }

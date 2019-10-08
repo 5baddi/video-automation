@@ -7,11 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class CustomTemplate extends Model
 {
     /**
-     * Set separated db connection
+     * The database table used by the model.
      *
      * @var string
      */
-    protected $connection = "mysql_va";
+    protected $table = "custom_templates";
 
     /**
      * The attributes that are mass assignable.

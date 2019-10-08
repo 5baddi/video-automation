@@ -5,14 +5,14 @@ namespace App;
 use Illuminate\Database\Eloquent\Model;
 
 class TemplateMedia extends Model
-{
+{ 
     /**
-     * Set separated db connection
+     * The database table used by the model.
      *
      * @var string
      */
-    protected $connection = "mysql_va";
-    
+    protected $table = "template_medias";
+
     /**
      * The attributes that are mass assignable.
      *
