@@ -42,7 +42,7 @@ class CustomTemplate extends Model
      */
     public function jobs()
     {
-        return $this->hasMany(RenderJob::class);
+        return $this->hasMany(RenderJob::class, 'template_id');
     }
 
     /**
@@ -52,6 +52,6 @@ class CustomTemplate extends Model
      */
     public function medias()
     {
-        return $this->hasMany(TemplateMedia::class);
+        return $this->hasMany(TemplateMedia::class, 'template_id');
     }
 }
