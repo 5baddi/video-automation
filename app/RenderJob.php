@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class RenderJob extends Model
 {
-    const DEFAULT_STATUS = "pending";
+    const DEFAULT_STATUS = "queued";
 
     /**
      * The database table used by the model.
