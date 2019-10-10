@@ -42,11 +42,11 @@ class VideoAutomationController extends Controller
 
             // Fetch the custom template
             $customTemplate = CustomTemplate::where('vau_id', $vauTemplateID)->first();
-            $customTemplateMedias = $customTemplate->medias();
             if(is_null($customTemplate))
                 return response()->json(['message' => "Template does not exists!"], 400);
 
             // Check the inputs are valid
+            $customTemplateMedias = $customTemplate->medias();
             if(!isset($body['inputs']))
                 return response()->json(['message' => "You must upload the medias"], 400);
             elseif(sizeof($body['inputs']) < $customTemplateMedias->count())
@@ -140,9 +140,16 @@ class VideoAutomationController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function status(Request $request, $jobID, $action = null)
+    public function status(Request $request, $renderID, $action = null)
     {
         try{
+            // Fetch if this render job exists
+            $renderJob = RenderJob::find($renderID);
+            if(is_null($renderJob))
+                return response()->json(['message' => "Job does not exists!"], 404);
+            elseif(is_null($renderJob->vau_job_id)) 
+                return response()->json(['message' => "Job requested not started yet!"], 400);
+
             // Init Guzzle client
             $headers = [
                 'X-AUTH-TOKEN'  =>  AutomationApp::ACCESS_TOKEN
@@ -152,7 +159,7 @@ class VideoAutomationController extends Controller
             // Send the requet to vau API
             $response = $client->request(
                 'GET',
-                AutomationApp::API_URL . '/v1/jobs/' . $jobID, 
+                AutomationApp::API_URL . '/v1/jobs/' . $renderJob->vau_job_id, 
                 [
                     // TODO: enable the verification on prod
                     'verify'    =>  false

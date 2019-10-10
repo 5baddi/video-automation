@@ -20,7 +20,7 @@ Route::group(['middleware' => 'api', 'namespace' => 'API', 'prefix' => 'v1'], fu
     // Start a render job
     Route::post('/render', 'VideoAutomationController@render');
     // Get job progress
-    Route::get('/status/{jobID}/{action?}', 'VideoAutomationController@status')->where(['jobID' => '[0-9]+']);
+    Route::get('/status/{renderID}/{action?}', 'VideoAutomationController@status')->where(['renderID' => '[0-9]+']);
     // Notify after render job done
     Route::get('/notify/{renderID}', 'CronController@notify')->where(['renderID' => '[0-9]+'])->name('cron.notify');
 });
