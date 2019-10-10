@@ -6,14 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class RenderJob extends Model
 {
-    const DEFAULT_STATUS = "queued";
+    const DEFAULT_STATUS = "created";
 
     /**
      * The database table used by the model.
      *
      * @var string
      */
-    protected $table = "va_render_jobs";
+    protected $table = "VA_Render_jobs";
 
     /**
      * The attributes that are mass assignable.

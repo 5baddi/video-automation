@@ -11,7 +11,7 @@ class TemplateMedia extends Model
      *
      * @var string
      */
-    protected $table = "Va_template_medias";
+    protected $table = "VA_Template_medias";
 
     /**
      * The attributes that are mass assignable.

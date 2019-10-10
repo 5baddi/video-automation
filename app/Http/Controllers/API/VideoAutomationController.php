@@ -6,7 +6,6 @@ use App\RenderJob;
 use App\AutomationApp;
 use App\CustomTemplate;
 use Illuminate\Http\Request;
-use App\Entities\VAU\TemplateEntity;
 use App\Http\Controllers\Controller;
 use GuzzleHttp\Client as GuzzleClient;
 use Illuminate\Support\Facades\Storage;
@@ -140,7 +139,7 @@ class VideoAutomationController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function status(Request $request, $renderID, $action = null)
+    public function status($renderID, $action = null)
     {
         try{
             // Fetch if this render job exists
@@ -148,7 +147,7 @@ class VideoAutomationController extends Controller
             if(is_null($renderJob))
                 return response()->json(['message' => "Job does not exists!"], 404);
             elseif(is_null($renderJob->vau_job_id)) 
-                return response()->json(['message' => "Job requested not started yet!"], 400);
+                return response()->json(['message' => "Job requested not created yet!"], 400);
 
             // Init Guzzle client
             $headers = [
