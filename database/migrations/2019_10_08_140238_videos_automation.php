@@ -31,8 +31,8 @@ class VideosAutomation extends Migration
             $table->unsignedBigInteger('template_id');
             $table->string('placeholder')->nullable(false);
             $table->string('type')->default('image');
-            $table->string('color')->nullable();
-            $table->string('default')->nullable();
+            $table->string('value')->nullable();
+            $table->string('default_value')->nullable();
             $table->smallInteger('position')->default(0);
             $table->foreign('template_id')->references('id')->on('custom_templates');
             $table->timestamps();
@@ -42,7 +42,7 @@ class VideosAutomation extends Migration
         Schema::create('render_jobs', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('template_id');
-            $table->unsignedBigInteger('vau_job_id');
+            $table->unsignedBigInteger('vau_job_id')->unique()->nullable();
             $table->string('status')->default('queued');
             $table->string('message')->default(null);
             $table->string('output_url')->default(null);
@@ -50,6 +50,7 @@ class VideosAutomation extends Migration
             $table->integer('left_seconds')->default(0);
             $table->foreign('template_id')->references('id')->on('custom_templates');
             $table->timestamps();
+            $table->timestamp('finished_at')->nullable();
         });
     }
 

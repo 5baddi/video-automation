@@ -11,7 +11,7 @@ class TemplateMedia extends Model
      *
      * @var string
      */
-    protected $table = "template_medias";
+    protected $table = "Va_template_medias";
 
     /**
      * The attributes that are mass assignable.
@@ -21,8 +21,8 @@ class TemplateMedia extends Model
     protected $fillable = [
         'placeholder',
         'type',
-        'color',
-        'default'
+        'value',
+        'default_value'
     ];
 
     /**

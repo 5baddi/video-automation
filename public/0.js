@@ -1731,7 +1731,7 @@ var render = function(_h, _vm) {
     { staticClass: "the-footer flex-wrap justify-center", class: _vm.classes },
     [
       _c("span", [
-        _vm._v("COPYRIGHT @ " + _vm._s(new Date().getFullYear()) + " "),
+        _vm._v("© " + _vm._s(new Date().getFullYear()) + " "),
         _c(
           "a",
           {
@@ -1743,7 +1743,7 @@ var render = function(_h, _vm) {
           },
           [_vm._v("V12 Software")]
         ),
-        _vm._v(", All rights Reserved")
+        _vm._v(" ‐ All rights Reserved")
       ])
     ]
   )

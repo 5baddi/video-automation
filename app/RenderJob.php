@@ -6,12 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class RenderJob extends Model
 {
+    const DEFAULT_STATUS = "pending";
+
     /**
      * The database table used by the model.
      *
      * @var string
      */
-    protected $table = "render_jobs";
+    protected $table = "va_render_jobs";
 
     /**
      * The attributes that are mass assignable.
@@ -33,7 +35,8 @@ class RenderJob extends Model
         'template_id'   => 'integer',
         'vau_job_id'    => 'integer',
         'progress'      => 'integer',
-        'left_seconds'  => 'integer'
+        'left_seconds'  => 'integer',
+        'finished_at'   => 'datetime',
     ];
 
     /**

@@ -11,7 +11,7 @@
 
 <template functional>
     <footer class="the-footer flex-wrap justify-center" :class="classes">
-        <span>COPYRIGHT @ {{ new Date().getFullYear() }} <a href="https://v12software.com" target="_blank" rel="nofollow">V12 Software</a>, All rights Reserved</span>
+        <span>&copy; {{ new Date().getFullYear() }} <a href="https://v12software.com" target="_blank" rel="nofollow">V12 Software</a> &dash; All rights Reserved</span>
         <!-- <span class="md:flex hidden items-center">
             <span>Hand-crafted & Made with</span>
             <feather-icon icon="HeartIcon" svgClasses="stroke-current text-danger w-6 h-6" class="ml-2" />

@@ -46,6 +46,25 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Exception $exception)
     {
+        // Handle the API json response
+        if($this->isHttpException($exception) && $request->is("api/*")){
+            $message = "";
+
+            switch($exception->getStatusCode()){
+                case 400:
+                    $message = "Bad request.";
+                break;
+                case 404:
+                    $message = "Not found!";
+                break;
+                default:
+                    $message = "Internal server error!";
+                break;
+            }
+
+            return response()->json(['message' => $message], $exception->getStatusCode());
+        }
+
         return parent::render($request, $exception);
     }
 }
