@@ -22,7 +22,7 @@ Route::group(['middleware' => 'api', 'namespace' => 'API', 'prefix' => 'v1'], fu
     // Store new custom template
     Route::post('/templates', 'VideoAutomationController@store');
     // Update an exists custom template
-    Route::put('/templates', 'VideoAutomationController@update');
+    Route::put('/templates/{templateID}', 'VideoAutomationController@update')->where(['templateID' => '[0-9]+']);
     // Delete a custom template
     Route::delete('/templates/{templateID}', 'VideoAutomationController@delete')->where(['templateID' => '[0-9]+']);
     // Start a render job
