@@ -303,7 +303,7 @@ class VideoAutomationController extends Controller
         // Delete the custom template model also the relations
         $customTemplate->delete();
 
-        return response()->json(['message' => "The " . $customTemplate->name . " has deleted successfully."], 200);
+        return response()->json(['message' => "The " . $customTemplate->name . " has been deleted successfully."], 200);
     }
 
     /**

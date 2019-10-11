@@ -301,6 +301,50 @@ Update a exists custom template and his medias
     * **Content:** 
         ```json
         {
-            "message": ":attribute validation faild!" 
+            "message": ":attribute validation failed!" 
         }
+        ```
+
+---
+**Delete a custom template**
+---
+
+Delete a exists custom template row
+
+* **URL**
+
+    /api/v1/templates/:id
+
+* **Method**
+
+    DELETE
+
+* **URL Params**
+
+    | Name | Rule | Default | Comment |
+    | --- | --- | --- | --- |
+    | Id | Required, integer | -- | The custom template id |
+
+* **Data Params**
+
+    None
+
+* **Success Response**
+
+    * **Code:** 200 </br>
+    * **Content:**
+      ```json
+        {
+            "message": "The Laidback Swingy Slides has been deleted successfully."
+        }
+      ```
+
+* **Error Response**
+
+    * **Code:** 404 </br>
+    * **Content:**
+        ```json
+            {
+                "message": "The requested template does not exists!"
+            }
         ```
