@@ -3,6 +3,7 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CustomTemplate extends Model
 {
@@ -40,9 +41,9 @@ class CustomTemplate extends Model
     /**
      * Retrive render jobs
      *
-     * @return App\RenderJob
+     * @return HasMany
      */
-    public function jobs()
+    public function jobs() : HasMany
     {
         return $this->hasMany(RenderJob::class, 'template_id');
     }
@@ -50,10 +51,25 @@ class CustomTemplate extends Model
     /**
      * Retrive template medias
      *
-     * @return App\TemplateMedia
+     * @return HasMany
      */
-    public function medias()
+    public function medias() : HasMany
     {
         return $this->hasMany(TemplateMedia::class, 'template_id');
+    }
+
+    /**
+     * Delete also the relations
+     *
+     * @return bool|null|void
+     */
+    public function delete()
+    {
+        // Delete medias
+        $this->medias()->delete();
+        // Delete render jobs
+        $this->jobs()->delete();
+
+        return parent::delete();
     }
 }

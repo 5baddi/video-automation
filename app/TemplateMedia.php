@@ -3,6 +3,7 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TemplateMedia extends Model
 { 
@@ -44,9 +45,9 @@ class TemplateMedia extends Model
     /**
      * Retrive parent template
      *
-     * @return App\CustomTemplate
+     * @return BelongsTo
      */
-    public function template()
+    public function template() : BelongsTo
     {
         return $this->belongTo(CustomTemplate::class);
     }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\RenderJob;
 use App\AutomationApp;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 
 class CronController extends Controller
@@ -13,9 +14,9 @@ class CronController extends Controller
      * Notify the user about the render job
      *
      * @param int $renderID
-     * @return \Illuminate\Http\Response
+     * @return JsonResponse
      */
-    public function notify($renderID)
+    public function notify(int $renderID) : JsonResponse
     {
         try{
             // Clear the exists & not started render jobs
@@ -30,13 +31,6 @@ class CronController extends Controller
             $renderJobStatusResponse = app(VideoAutomationController::class)->status($renderJob->id);
             if($renderJobStatusResponse->getStatusCode() == 200){
                 $renderJobStatus = json_decode($renderJobStatusResponse->getContent(), true);
-
-                // Move output file from VAU API to the server storage
-                // $outputFile = $renderJobStatus['file'];
-                // $targetPath = 'video.mp4';
-                // $tempFile = tempnam(sys_get_temp_dir(), $targetPath); // TODO: retrive output file name
-                // copy($outputFile, $targetPath);
-                // TODO: move the file to server storage
                 
                 // Update the render job info
                 $renderJob->status = $renderJobStatus['status'];
@@ -45,6 +39,14 @@ class CronController extends Controller
                 $renderJob->left_seconds = $renderJobStatus['left'];
                 $renderJob->finished_at = !is_null($renderJobStatus['finishedAt']) ? date('Y-m-d H:i:s', strtotime($renderJobStatus['finishedAt'])) : null;
                 $renderJob->update();
+
+                // Move output file from VAU API to the server storage
+                $outputFile = uniqid() . DIRECTORY_SEPARATOR . str_replace(' ', '_', pathinfo($renderJobStatus['file'], PATHINFO_FILENAME)) . '.' . pathinfo($renderJobStatus['file'], PATHINFO_EXTENSION);
+                $tempFile = tempnam(sys_get_temp_dir(), $outputFile);
+                if(filter_var($renderJobStatus['file'], FILTER_VALIDATE_URL))
+                    copy($renderJobStatus['file'], $outputFile);
+
+                Storage::disk('private')->put(AutomationApp::OUTPUT_DIRECTORY_NAME . '/' . date('Ymd'), file_get_contents($tempFile));
 
                 // TODO: send notif to user
 
@@ -62,9 +64,9 @@ class CronController extends Controller
      *
      * @param Request $request
      * @param int $renderID
-     * @return \Illuminate\Http\Response
+     * @return JsonResponse
      */
-    public function vauNotify(Request $request, $renderID)
+    public function vauNotify(Request $request, int $renderID) : JsonResponse
     {
         try{
             // Clear the exists & not started render jobs
@@ -109,7 +111,7 @@ class CronController extends Controller
      *
      * @return void
      */
-    private function ClearDieRenderJobs()
+    private function ClearDieRenderJobs() : void
     {
         try{
             // Fetch only created jobs without running

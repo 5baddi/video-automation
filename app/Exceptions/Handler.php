@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Exception;
+use App\AutomationApp;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 
 class Handler extends ExceptionHandler
@@ -42,11 +43,11 @@ class Handler extends ExceptionHandler
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \Exception  $exception
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\Response|\Illuminate\Http\JsonResponse|\Symfony\Component\HttpFoundation\Response
      */
     public function render($request, Exception $exception)
     {
-        // Handle the API json response
+        // Handle the API errors pages as json response
         if($this->isHttpException($exception) && $request->is("api/*")){
             $message = "";
 
@@ -57,12 +58,25 @@ class Handler extends ExceptionHandler
                 case 404:
                     $message = "Not found!";
                 break;
+                case 405:
+                    $message = "Method not allowed!";
+                break;
                 default:
                     $message = "Internal server error!";
                 break;
             }
 
             return response()->json(['message' => $message], $exception->getStatusCode());
+        }
+        
+        // Handle exception with env mode
+        if($exception instanceof \Exception){
+            $message = AutomationApp::INTERNAL_SERVER_ERROR;
+
+            if(env('APP_DEBUG') == true)
+                $message = $exception->getMessage();
+                
+            return response()->json(['message' => $message], 500);
         }
 
         return parent::render($request, $exception);

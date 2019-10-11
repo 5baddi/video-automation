@@ -3,6 +3,7 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RenderJob extends Model
 {
@@ -43,9 +44,9 @@ class RenderJob extends Model
     /**
      * Retrive parent object
      *
-     * @return App\CustomTemplate
+     * @return BelongsTo
      */
-    public function template()
+    public function template() : BelongsTo
     {
         return $this->belongsTo(CustomTemplate::class);
     }
