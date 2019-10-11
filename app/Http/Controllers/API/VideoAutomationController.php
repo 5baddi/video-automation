@@ -16,6 +16,16 @@ use GuzzleHttp\Exception\BadResponseException;
 class VideoAutomationController extends Controller
 {
     /**
+     * Retrieve all the custom templates
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        return response()->json(['data' => CustomTemplate::all()]);
+    }
+
+    /**
      * Submit new custom template
      *
      * @param Request $request

@@ -19,6 +19,8 @@ Route::group(['middleware' => 'api', 'namespace' => 'API', 'prefix' => 'v1'], fu
 
     // Start a render job
     Route::post('/render', 'VideoAutomationController@render');
+    // Retrieve all the custom templates
+    Route::get('/templates', 'VideoAutomationController@index');
     // Store new custom template
     Route::post('/templates/new', 'VideoAutomationController@store');
     // Get job progress
