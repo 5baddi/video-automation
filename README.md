@@ -1,3 +1,4 @@
+![V12 Software](logo.png?raw=true)
 # Social Videos Automation
 ### An app to auto generate videos from content of [V12 Software](https://www.v12software.com) plat-form using the [VAU API](https://vauvideo.com) features.
 [Developed by Mohamed BADDI](https://github.com/5baddi)
