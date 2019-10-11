@@ -23,7 +23,14 @@ class VideoAutomationController extends Controller
      */
     public function index() : JsonResponse
     {
-        return response()->json(['data' => CustomTemplate::all()]);
+        // Retrieve all custom templates
+        $customTemplates = CustomTemplate::all();
+
+        if($customTemplates->count() > 0)
+            return response()->json(['data' => $customTemplates]);
+
+        // Return no content if no data
+        return response()->json([], 204);
     }
 
     /**
@@ -64,7 +71,7 @@ class VideoAutomationController extends Controller
                 'enabled'       =>  'nullable|in:0,1',
                 'medias'        =>  'required|min:1',
                 'medias.*.placeholder'  =>  'required',
-                'medias.*.type'         =>  'required|in:' . implode(',', TemplateMedia::ALLOWED_TYPES),
+                'medias.*.type'         =>  'nullable|in:' . implode(',', TemplateMedia::ALLOWED_TYPES),
                 'medias.*.color'        =>  'nullable|string',
                 'medias.*.default_value'=>  'nullable|string',
                 'medias.*.preview_path' =>  'nullable|string',
@@ -120,7 +127,7 @@ class VideoAutomationController extends Controller
                 $templateMedia = new TemplateMedia();
                 $templateMedia->template_id = $customTemplate->id;
                 $templateMedia->placeholder = str_replace(' ', '_', $media['placeholder']);
-                $templateMedia->type = $media['type'];
+                $templateMedia->type = isset($media['type']) ? $media['type'] : TemplateMedia::DEFAULT_TYPE;
                 if(isset($media['default_value']) && isset($media['type']) && $media['type'] != TemplateMedia::DEFAULT_TYPE)
                     $templateMedia->default_value = $media['default_value'];
                 if(!isset($media['position']))
@@ -177,7 +184,7 @@ class VideoAutomationController extends Controller
                 'medias'        =>  'required|min:1',
                 'medias.*.id'           =>  'nullable|integer',
                 'medias.*.placeholder'  =>  'required',
-                'medias.*.type'         =>  'required|in:' . implode(',', TemplateMedia::ALLOWED_TYPES),
+                'medias.*.type'         =>  'nullable|in:' . implode(',', TemplateMedia::ALLOWED_TYPES),
                 'medias.*.color'        =>  'nullable|string',
                 'medias.*.default_value'=>  'nullable|string',
                 'medias.*.preview_path' =>  'nullable|string',
@@ -243,7 +250,7 @@ class VideoAutomationController extends Controller
 
                 $templateMedia->template_id = $customTemplate->id;
                 $templateMedia->placeholder = str_replace(' ', '_', $media['placeholder']);
-                $templateMedia->type = $media['type'];
+                $templateMedia->type = isset($media['type']) ? $media['type'] : TemplateMedia::DEFAULT_TYPE;
                 if(isset($media['default_value']) && isset($media['type']) && $media['type'] != TemplateMedia::DEFAULT_TYPE)
                     $templateMedia->default_value = $media['default_value'];
                 if(!isset($media['position']))

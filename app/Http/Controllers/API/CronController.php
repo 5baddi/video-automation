@@ -79,14 +79,7 @@ class CronController extends Controller
 
             // Get the render job status and update the db
             $content = $request->all();
-            if(!is_null($content) && isset($content['renderStatus']) && sizeof($content['renderStatus']) > 0){
-                // Move output file from VAU API to the server storage
-                // $outputFile = $content['outputUrls']['mainFile'];
-                // $targetPath = 'video.mp4';
-                // $tempFile = tempnam(sys_get_temp_dir(), $targetPath); // TODO: retrive output file name
-                // copy($outputFile, $targetPath);
-                // TODO: move the file to server storage
-                
+            if(!is_null($content) && isset($content['renderStatus']) && sizeof($content['renderStatus']) > 0){       
                 // Update the render job info
                 $renderJob->status = $content['renderStatus']['state'];
                 $renderJob->message = $content['renderStatus']['message'];
@@ -94,6 +87,14 @@ class CronController extends Controller
                 $renderJob->left_seconds = $content['renderStatus']['etlSec'];
                 $renderJob->finished_at = !isset($content['finished']) ? date('Y-m-d H:i:s', strtotime($content['finished'])) : null;
                 $renderJob->update();
+
+                // Move output file from VAU API to the server storage
+                $outputFile = uniqid() . DIRECTORY_SEPARATOR . str_replace(' ', '_', pathinfo($content['outputUrls']['mainFile'], PATHINFO_FILENAME)) . '.' . pathinfo($content['outputUrls']['mainFile'], PATHINFO_EXTENSION);
+                $tempFile = tempnam(sys_get_temp_dir(), $outputFile);
+                if(filter_var($content['outputUrls']['mainFile'], FILTER_VALIDATE_URL))
+                    copy($content['outputUrls']['mainFile'], $outputFile);
+
+                Storage::disk('private')->put(AutomationApp::OUTPUT_DIRECTORY_NAME . '/' . date('Ymd'), file_get_contents($tempFile));
 
                 // TODO: send notif to user
 
