@@ -57,7 +57,7 @@ Store new custom template & returns json data about the inserted row
 * **Success Response**
 
     * **Code:** 200 </br>
-      **Content:** 
+    * **Content:** 
         ```json
         { 
             "template_id": 1, 
@@ -67,7 +67,7 @@ Store new custom template & returns json data about the inserted row
 * **Error Response**
 
     * **Code:** 400 </br>
-      **Content:** 
+    * **Content:** 
         ```json
         {
             "message": "The template 'Laidback Swingy Slides' is already exists!" 
@@ -98,7 +98,7 @@ Show data of all the exists custom templates
 * **Success Response**
 
     * **Code:** 200 </br>
-      **Content:**
+    * **Content:**
       ```json
       {
           "data": 
@@ -123,5 +123,5 @@ Show data of all the exists custom templates
 * **Error Response**
 
     * **Code:** 204 </br>
-      **No Content**
+    * **No Content**
 
