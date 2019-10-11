@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class TemplateMedia extends Model
 { 
+    const DEFAULT_TYPE = "image";
+    const ALLOWED_TYPES = ["image", "text"];
+
     /**
      * The database table used by the model.
      *
@@ -21,8 +24,10 @@ class TemplateMedia extends Model
     protected $fillable = [
         'placeholder',
         'type',
-        'value',
-        'default_value'
+        'color',
+        'default_value',
+        'preview_path',
+        'thumbnail_path'
     ];
 
     /**

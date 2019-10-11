@@ -23,6 +23,7 @@ class RenderJob extends Model
     protected $fillable = [
         'status',
         'message',
+        'output_name',
         'output_url'
     ];
 

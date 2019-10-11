@@ -7,21 +7,129 @@ use App\AutomationApp;
 use App\CustomTemplate;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\TemplateMedia;
 use GuzzleHttp\Client as GuzzleClient;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use GuzzleHttp\Exception\BadResponseException;
 
 class VideoAutomationController extends Controller
 {
-    // public function test(){
-    //     $tempFile = tempnam(sys_get_temp_dir(), 'super_social_media.mp4');
-    //     copy('https://s3-eu-west-1.amazonaws.com/vauvideo/assets/vauvideo/vau-public/super_social_media/super_social_media_THUMB.mp4', $tempFile);
-    //     Storage::disk('public')->put('templates/super_social_media.mp4', $tempFile);
-    // }
+    /**
+     * Submit new custom template
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        try{
+            // Get the request data
+            $data = $request->all();
+
+            // Custom template rules
+            $rules = [
+                'vau_id'        =>  'required|integer',
+                'name'          =>  'required|string|between:1,100',
+                'rotation'      =>  'required|in:' . implode(',', CustomTemplate::ROTAIONS),
+                'package'       =>  'nullable|string',
+                'version'       =>  'nullable',
+                'preview_path'  =>  'nullable|string',
+                'enabled'       =>  'nullable|in:0,1',
+                'medias'        =>  'required|min:1',
+                'medias.*.placeholder'  =>  'required',
+                'medias.*.type'         =>  'required|in:' . implode(',', TemplateMedia::ALLOWED_TYPES),
+                'medias.*.color'        =>  'nullable|string',
+                'medias.*.default_value'=>  'nullable|string',
+                'medias.*.preview_path' =>  'nullable|string',
+                'medias.*.position'     =>  'nullable|integer',
+                // 'updated_at'    =>  'datetime:Y-m-d H:i:s',
+                // 'created_at'    =>  'datetime:Y-m-d H:i:s',
+            ];
+
+            // Validate data
+            $validator = Validator::make($data, $rules);
+            if($validator->fails())
+                return response()->json(['message' => $validator->getMessageBag()->all()], 400);
+
+            // Verify if this template already exists
+            $existsCustomTemplate = CustomTemplate::where('name', $data['name'])->orWhere('vau_id', $data['vau_id'])->get();
+            if($existsCustomTemplate->count() > 0)
+                return response()->json(['message' => "The template '" . $data['name'] . "' is already exists!"], 400);
+
+            // Init custom template obj
+            $customTemplate = new CustomTemplate();
+            
+            // Copy the preview
+            if(isset($data['preview_path'])){
+                $fileName = str_replace(' ', '_', $data['name']);
+                $fileExtension = pathinfo($data['preview_path'], PATHINFO_EXTENSION);
+                $demoFileName = pathinfo($data['preview_path'], PATHINFO_FILENAME) . '.' . $fileExtension;
+                $tempFile = tempnam(sys_get_temp_dir(), $demoFileName);
+
+                // Copy from online ressource
+                if(filter_var($data['preview_path'], FILTER_VALIDATE_URL))
+                    copy($data['preview_path'], $tempFile);
+
+                $customTemplate->preview_path = $demoFileName;
+            }
+
+            // Store the template info
+            $customTemplate->name = $data['name'];
+            $customTemplate->vau_id = $data['vau_id'];
+            if(isset($data['package']))
+                $customTemplate->package = $data['package'];
+            if(isset($data['version']))
+                $customTemplate->version = $data['version'];
+            $customTemplate->enabled = (isset($data['enabled']) && in_array($data['enabled'], [0, 1])) ? $data['enabled'] : 1;
+            // $customTemplate->created_at = (isset($data['created_at'])) ? $data['created_at'] : date('Y-m-d H:i:s');
+            $customTemplate->save();
+
+            // Move the temp file to the server
+            if(isset($data['preview_path']))
+                Storage::disk('public')->put('/templates/' . $customTemplate->id . '/' . $demoFileName, $tempFile);
+
+            // Adjust the template medias
+            foreach($data['medias'] as $key => $media){
+                $templateMedia = new TemplateMedia();
+                $templateMedia->template_id = $customTemplate->id;
+                $templateMedia->placeholder = str_replace(' ', '_', $media['placeholder']);
+                $templateMedia->type = $media['type'];
+                if(isset($media['default_value']) && isset($media['type']) && $media['type'] != TemplateMedia::DEFAULT_TYPE)
+                    $templateMedia->default_value = $media['default_value'];
+                if(!isset($media['position']))
+                    $templateMedia->position = $key + 1;
+
+                // Copy the media preview
+                if(isset($media['preview_path'])){
+                    $mediaFileName = str_replace(' ', '_', pathinfo($media['preview_path'], PATHINFO_FILENAME));
+                    $mediaPath = '/templates/' . $customTemplate->id . '/medias/' . $mediaFileName . '.' . PATHINFO($media['preview_path'], PATHINFO_EXTENSION);
+
+                    $tempMedia = tempnam(sys_get_temp_dir(), $mediaFileName);
+
+                    // Copy from online ressource
+                    if(filter_var($media['preview_path'], FILTER_VALIDATE_URL))
+                        copy($media['preview_path'], $tempMedia);
+
+                    Storage::disk('public')->put($mediaFileName, $tempMedia);
+
+                    $templateMedia->preview_path = $mediaPath;
+                }
+
+                $customTemplate->medias()->save($templateMedia);
+            }
+
+            // Return the inserted template id
+            return response()->json(['template_id' => $customTemplate->id, 'message' => "The template '" . $data['name'] . "' added successfully."]);
+        }catch(\Exception $ex){
+            return response()->json(['message' => AutomationApp::INTERNAL_SERVER_ERROR], 500);
+        }
+    }
 
     /**
-     * Render job
+     * Exec render job
      *
+     * @param Request $request
      * @return \Illuminate\Http\Response
      */
     public function render(Request $request)
@@ -47,7 +155,9 @@ class VideoAutomationController extends Controller
             // Check the inputs are valid
             $customTemplateMedias = $customTemplate->medias();
             if(!isset($body['inputs']))
-                return response()->json(['message' => "You must upload the medias"], 400);
+                return response()->json(['message' => "You must upload the medias!"], 400);
+            elseif($customTemplate->enabled != 1 || sizeof($customTemplateMedias) == 0)
+                return response()->json(['message' => "This template not enabled or not for use!"], 400);
             elseif(sizeof($body['inputs']) < $customTemplateMedias->count())
                 return response()->json(['message' => "Submitted medias are not correct!"], 400);
 
@@ -66,7 +176,7 @@ class VideoAutomationController extends Controller
             $videoData['template'] = $body['template'];
             $videoData['input'] = $body['inputs'];
             $videoData['name'] = $fileName;
-            $videoData['notificationUrl'] = route('cron.notify', ['jobID' => $renderJob->id]);
+            $videoData['notificationUrl'] = route('vau.notify', ['jobID' => $renderJob->id]);
 
             // Init Guzzle client
             $headers = [
@@ -101,6 +211,7 @@ class VideoAutomationController extends Controller
                     $renderJob->message = $content['renderStatus']['message'];
                     $renderJob->progress = $content['renderStatus']['progressPercent'];
                     $renderJob->left_seconds = $content['renderStatus']['etlSec'];
+                    $renderJob->output_name = $fileName;
                     $renderJob->output_url = $content['outputUrls']['mainFile'];
                     $renderJob->created_at = date('Y-m-d H:i:s', strtotime($content['created']));
                     $renderJob->finished_at = !is_null($content['finished']) ? date('Y-m-d H:i:s', strtotime($content['finished'])) : null;
@@ -128,15 +239,17 @@ class VideoAutomationController extends Controller
                     //return response()->json("Incorrect video render job identity! please try again or contact support", 404);
                 break;
                 default:
-                    return response(['message' => "Internal server error to create the video! please try again or contact support"], 500);
+                    return response(['message' => AutomationApp::INTERNAL_SERVER_ERROR], 500);
                 break;
             }
         }
     }
 
     /**
-     * Get status of job progress
+     * Get status of render job
      *
+     * @param int $renderID
+     * @param string $action
      * @return \Illuminate\Http\Response
      */
     public function status($renderID, $action = null)
@@ -202,7 +315,7 @@ class VideoAutomationController extends Controller
                     return response()->json(['message' => "Incorrect video render job identity! please try again or contact support"], 400);
                 break;
                 default:
-                    return response()->json(['message' => "Internal server error to create the video! please try again or contact support"], 500);
+                    return response()->json(['message' => AutomationApp::INTERNAL_SERVER_ERROR], 500);
                 break;
             }
         }

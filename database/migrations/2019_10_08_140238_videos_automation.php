@@ -22,6 +22,8 @@ class VideosAutomation extends Migration
             $table->string('version')->nullable();
             $table->string('rotation')->default('square');
             $table->string('preview_path')->nullable();
+            $table->string('thumbnail_path')->nullable();
+            $table->smallInteger('enabled')->default(1);
             $table->timestamps();
         });
 
@@ -31,8 +33,10 @@ class VideosAutomation extends Migration
             $table->unsignedBigInteger('template_id');
             $table->string('placeholder')->nullable(false);
             $table->string('type')->default('image');
-            $table->string('value')->nullable();
+            $table->string('color')->nullable();
             $table->string('default_value')->nullable();
+            $table->string('preview_path')->nullable();
+            $table->string('thumbnail_path')->nullable();
             $table->smallInteger('position')->default(0);
             $table->foreign('template_id')->references('id')->on('custom_templates');
             $table->timestamps();
@@ -45,6 +49,7 @@ class VideosAutomation extends Migration
             $table->unsignedBigInteger('vau_job_id')->unique()->nullable();
             $table->string('status')->default('queued');
             $table->string('message')->default(null);
+            $table->string('output_name')->default(null);
             $table->string('output_url')->default(null);
             $table->integer('progress')->default(0);
             $table->integer('left_seconds')->default(0);

@@ -6,12 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class CustomTemplate extends Model
 {
+    const ROTAIONS = ["square", "portrait", "landscape"];
     /**
      * The database table used by the model.
      *
      * @var string
      */
-    protected $table = "va_custom_templates";
+    protected $table = "VA_Custom_templates";
 
     /**
      * The attributes that are mass assignable.
@@ -23,7 +24,8 @@ class CustomTemplate extends Model
         'package',
         'version',
         'rotation',
-        'preview_path'
+        'preview_path',
+        'thumbnail_path'
     ];
 
     /**
