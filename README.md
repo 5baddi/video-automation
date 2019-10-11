@@ -137,8 +137,7 @@ Show data of a exists custom template
                 }
             ]
         }
-    }
-      ```
+        ```
 
 * **Error Response**
 
