@@ -353,7 +353,7 @@ class VideoAutomationController extends Controller
         $templateMedia->type = isset($media['type']) ? $media['type'] : TemplateMedia::DEFAULT_TYPE;
         if(isset($media['default_value']) && isset($media['type']) && $media['type'] != TemplateMedia::DEFAULT_TYPE)
             $templateMedia->default_value = $media['default_value'];
-        if(!isset($media['position']))
+        if(isset($media['position']))
             $templateMedia->position = $media['position'];
 
         // Copy the media preview
