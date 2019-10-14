@@ -419,7 +419,7 @@ class VideoAutomationController extends Controller
             elseif($customTemplate->enabled != 1)
                 return response()->json(['message' => "This template not enabled or not for use!"], 400);
             elseif(sizeof($body['inputs']) != $customTemplateMedias->count())
-                return response()->json(['message' => "Submitted medias are not correct!"], 400);
+                return response()->json(['message' => "The submitted media are not the same as those required by the video template!"], 400);
 
             // Validation rules
             $rules = [
@@ -430,7 +430,7 @@ class VideoAutomationController extends Controller
             // Validate the main body template
             $validator = Validator::make($body, $rules);
             if($validator->fails())
-                return response()->json(['message' => "Submitted medias are not correct!"], 400);
+                return response()->json(['message' => $validator->getMessageBag()->all()], 400);
 
             // Verify if some render job already started
             $this->ClearDieRenderJobs();
