@@ -20,7 +20,7 @@ class CronController extends Controller
     {
         try{
             // Clear the exists & not started render jobs
-            $this->ClearDieRenderJobs();
+            // $this->ClearDieRenderJobs();
 
             // Fetch if this render job exists
             $renderJob = RenderJob::find($renderID);
@@ -70,7 +70,7 @@ class CronController extends Controller
     {
         try{
             // Clear the exists & not started render jobs
-            $this->ClearDieRenderJobs();
+            // $this->ClearDieRenderJobs();
 
             // Fetch if this render job exists
             $renderJob = RenderJob::find($renderID);
@@ -104,29 +104,6 @@ class CronController extends Controller
             return response()->json(['message' => "Bad request! please try again or contact support"], 400);
         }catch(\Exception $ex){
             return response(['message' => AutomationApp::INTERNAL_SERVER_ERROR], 500);
-        }
-    }
-
-    /**
-     * Clear dies render jobs
-     *
-     * @return void
-     */
-    private function ClearDieRenderJobs() : void
-    {
-        try{
-            // Fetch only created jobs without running
-            $renderJobs = RenderJob::where('status', RenderJob::DEFAULT_STATUS)->get();
-
-            foreach($renderJobs as $renderJob){
-                // Creating time plus thirty minutes
-                $plusThirtyMinutes = strtotime('+30 minutes', strtotime($renderJob->createdAt));
-                // Remove the older jobs
-                if($plusThirtyMinutes < date('Y-m-d H:i:s') || is_null($renderJob->created_at))
-                    $renderJob->delete();
-            }
-        }catch(\Exception $ex){
-            // TODO: hanlde the exception log
         }
     }
 }

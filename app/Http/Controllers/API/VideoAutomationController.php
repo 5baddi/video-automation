@@ -421,6 +421,9 @@ class VideoAutomationController extends Controller
             elseif(sizeof($body['inputs']) < $customTemplateMedias->count())
                 return response()->json(['message' => "Submitted medias are not correct!"], 400);
 
+            // Verify if some render job already started
+            $this->ClearDieRenderJobs();
+
             // File name
             $fileName = $customTemplate->name;
             if(isset($body['name']))
@@ -461,9 +464,6 @@ class VideoAutomationController extends Controller
             if($response->getStatusCode() === 200){
                 // Content of response
                 $content = json_decode($response->getBody()->getContents(), true);
-
-                // Check if the queued render job is already exists
-                // $existsRenderJob = RenderJob::where('vau_job_id', $content['id'])->get();
 
                 if(is_null($renderJob->vau_job_id)){
                     // Add generated render job info
@@ -612,5 +612,24 @@ class VideoAutomationController extends Controller
 
         // If not success return a null path
         return null;
+    }
+
+    /**
+     * Clear dies render jobs
+     *
+     * @return void
+     */
+    private function ClearDieRenderJobs() : void
+    {
+        // Fetch only created jobs without running
+        $renderJobs = RenderJob::where('status', RenderJob::DEFAULT_STATUS)->get();
+
+        foreach($renderJobs as $renderJob){
+            // Creating time plus thirty minutes
+            $plusThirtyMinutes = strtotime('+30 minutes', strtotime($renderJob->createdAt));
+            // Remove the older jobs
+            if($plusThirtyMinutes < date('Y-m-d H:i:s') || is_null($renderJob->created_at))
+                $renderJob->delete();
+        }
     }
 }
