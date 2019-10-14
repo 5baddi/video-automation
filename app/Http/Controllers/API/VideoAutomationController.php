@@ -484,7 +484,7 @@ class VideoAutomationController extends Controller
                     return response()->download($tempFile, $fileName)->deleteFileAfterSend();
                 }
 
-                return response()->json($result);
+                return response()->json(['data' => $result]);
             }
         }catch(BadResponseException $ex){
             switch($ex->getResponse()->getStatusCode()){

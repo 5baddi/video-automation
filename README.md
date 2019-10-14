@@ -72,7 +72,7 @@ Show data of a exists custom template
 
     | Name | Rule | Default | Comment |
     | --- | --- | --- | --- |
-    | Id | Required, integer | -- | The custom template id |
+    | id | Required, integer | -- | The custom template id |
 
 * **Data Params**
 
@@ -243,7 +243,7 @@ Update a exists custom template and his medias
     
     | Name | Rule | Default | Comment |
     | --- | --- | --- | --- |
-    | Id | Required, integer | -- | The custom template id |
+    | id | Required, integer | -- | The custom template id |
 
 * **Data Params**
 
@@ -323,7 +323,7 @@ Delete a exists custom template row
 
     | Name | Rule | Default | Comment |
     | --- | --- | --- | --- |
-    | Id | Required, integer | -- | The custom template id |
+    | id | Required, integer | -- | The custom template id |
 
 * **Data Params**
 
@@ -346,5 +346,169 @@ Delete a exists custom template row
         ```json
             {
                 "message": "The requested template does not exists!"
+            }
+        ```
+        
+---
+**Video automation Job status**
+---
+
+Get the status of a running video render job and download the exported video file if is done.
+
+* **URL**
+
+    /api/v1/status/:renderID/:action
+
+* **Method**
+
+    GET
+
+* **URL Params**
+
+    | Name | Rule | Default | Comment |
+    | --- | --- | --- | --- |
+    | renderID | Required, integer | -- | The video render job id |
+    | action | optional, string | -- | Exec action if video render job done, the allowed now is download the file |
+
+* **Data Params**
+
+    None
+
+* **Success Response**
+
+    * **Code:** 200 </br>
+    * **Content:**
+      ```json
+        {
+            "data": {
+                "job": 4396,
+                "createdAt": "2019-10-10T17:16:05.091677",
+                "status": "done",
+                "progress": 100,
+                "left": 0,
+                "message": "Output files uploaded to storage.",
+                "file": "https://out.vauvideo.com/6ZPYDAh1SBFifjSL/2aNixtjJSHqOFsVx.mp4",
+                "finishedAt": "2019-10-10T17:18:29.332870"
+            }
+        }
+      ```
+
+* **Error Response**
+
+    * **Code:** 404 </br>
+    * **Content:**
+        ```json
+            {
+                "message": "Job does not exists!"
+            }
+        ```
+---
+**Video automation User notification**
+---
+
+Update job status & Send notification to the user using email.
+
+* **URL**
+
+    /api/v1/notify/:renderID
+
+* **Method**
+
+    GET
+
+* **URL Params**
+
+    | Name | Rule | Default | Comment |
+    | --- | --- | --- | --- |
+    | renderID | Required, integer | -- | The video render job id |
+
+* **Data Params**
+
+    None
+
+* **Success Response**
+
+    * **Code:** 200 </br>
+    * **Content:**
+      ```json
+        {
+            "data": {
+                "id": 5,
+                "template_id": 124,
+                "vau_job_id": 4395,
+                "status": "done",
+                "message": "Output files uploaded to storage.",
+                "output_url": "https://out.vauvideo.com/6ZPYDAh1SBFifjSL/tELxeFJTLNQdyrtF.mp4",
+                "progress": 100,
+                "left_seconds": 0,
+                "updated_at": "2019-10-10 17:03:32",
+                "created_at": "2019-10-10 16:45:58",
+                "finished_at": "2019-10-10 17:02:48"
+            }
+        }
+      ```
+
+* **Error Response**
+
+    * **Code:** 404 </br>
+    * **Content:**
+        ```json
+            {
+                "message": "Job does not exists!"
+            }
+        ```
+---
+**Video automation callback URL by VAU API**
+---
+
+The callback method can called by the VAU API.
+
+* **URL**
+
+    /api/v1/notify/:renderID
+
+* **Method**
+
+    POST
+
+* **URL Params**
+
+    | Name | Rule | Default | Comment |
+    | --- | --- | --- | --- |
+    | renderID | Required, integer | -- | The video render job id |
+
+* **Data Params**
+
+    The data params will be submitted by the VAU API directly.
+
+* **Success Response**
+
+    * **Code:** 200 </br>
+    * **Content:**
+      ```json
+        {
+            "data": {
+                "id": 5,
+                "template_id": 124,
+                "vau_job_id": 4395,
+                "status": "done",
+                "message": "Output files uploaded to storage.",
+                "output_url": "https://out.vauvideo.com/6ZPYDAh1SBFifjSL/tELxeFJTLNQdyrtF.mp4",
+                "progress": 100,
+                "left_seconds": 0,
+                "updated_at": "2019-10-10 17:03:32",
+                "created_at": "2019-10-10 16:45:58",
+                "finished_at": "2019-10-10 17:02:48"
+            }
+        }
+      ```
+
+* **Error Response**
+
+    * **Code:** 404 </br>
+    * **Content:**
+        ```json
+            {
+                "message": "Job does not exists!"
             }
         ```
