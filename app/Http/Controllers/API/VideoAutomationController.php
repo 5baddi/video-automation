@@ -405,10 +405,10 @@ class VideoAutomationController extends Controller
                 return response()->json(['message' => "You need to choice a template!"], 400);
 
             // Set the template id
-            $vauTemplateID = $body['template']['id'];
+            $selectedTemplateID = $body['template']['id'];
 
             // Fetch the custom template
-            $customTemplate = CustomTemplate::where('vau_id', $vauTemplateID)->first();
+            $customTemplate = CustomTemplate::find($selectedTemplateID);
             if(is_null($customTemplate))
                 return response()->json(['message' => "Template does not exists!"], 400);
 
@@ -434,6 +434,7 @@ class VideoAutomationController extends Controller
             // Re-form the body
             $videoData = [];
             $videoData['template'] = $body['template'];
+            $videoData['template']['id'] = $customTemplate->vau_id;
             $videoData['input'] = $body['inputs'];
             $videoData['name'] = $fileName;
             $videoData['notificationUrl'] = route('vau.notify', ['jobID' => $renderJob->id]);
@@ -495,11 +496,12 @@ class VideoAutomationController extends Controller
                 case 400:
                     return response()->json(['message' => "Please verify that the template entries are correct!"], 400);
                 break;
+                case 401:
                 case 404:
-                    //return response()->json("Incorrect video render job identity! please try again or contact support", 404);
+                    return response()->json(['message' => "Incorrect video render job identity! please try again or contact support"], 404);
                 break;
                 default:
-                    return response(['message' => AutomationApp::INTERNAL_SERVER_ERROR], 500);
+                    return response()->json(['message' => AutomationApp::INTERNAL_SERVER_ERROR], 500);
                 break;
             }
         }
