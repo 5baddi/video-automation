@@ -25,6 +25,12 @@ Route::group(['middleware' => 'api', 'namespace' => 'API', 'prefix' => 'v1'], fu
     Route::put('/templates/{templateID}', 'VideoAutomationController@update')->where(['templateID' => '[0-9]+']);
     // Delete a custom template
     Route::delete('/templates/{templateID}', 'VideoAutomationController@delete')->where(['templateID' => '[0-9]+']);
+    // Store a new media for a custom template
+    Route::post('/templates/{templateID}/medias', 'VideoAutomationController@addMedia')->where(['templateID' => '[0-9]+']);
+    // Update an exists media for a custom template
+    Route::put('/templates/medias/{mediaID}', 'VideoAutomationController@updateMedia')->where(['mediaID' => '[0-9]+']);
+    // Delete an exists media for a custom template
+    Route::delete('/templates/medias/{mediaID}', 'VideoAutomationController@deleteMedia')->where(['mediaID' => '[0-9]+']);
     // Start a render job
     Route::post('/render', 'VideoAutomationController@render');
     // Get job progress
