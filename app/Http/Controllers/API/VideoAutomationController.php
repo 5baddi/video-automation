@@ -253,7 +253,7 @@ class VideoAutomationController extends Controller
      * @param int $templateID
      * @return JsonResponse
      */
-    public function addMedia(Request $request, int $templateID) : JsonResponse
+    public function addMedias(Request $request, int $templateID) : JsonResponse
     {
         // Get all the submitted data
         $data = $request->all();
@@ -263,7 +263,7 @@ class VideoAutomationController extends Controller
             'medias'        =>  'required|min:1',
             // 'medias.*.id'           =>  'nullable|integer',
             'medias.*.placeholder'  =>  'required|string',
-            'medias.*.type'         =>  'nullable|in:' . implode(',', TemplateMedia::ALLOWED_TYPES),
+            'medias.*.type'         =>  'required|in:' . implode(',', TemplateMedia::ALLOWED_TYPES),
             'medias.*.color'        =>  'nullable|string',
             'medias.*.default_value'=>  'nullable|string',
             'medias.*.preview_path' =>  'nullable|string',

@@ -348,6 +348,170 @@ Delete a exists custom template row
                 "message": "The requested template does not exists!"
             }
         ```
+---
+**Add a range of new medias for a custom template**
+---
+
+Insert range of new template medias for a custom template.
+
+* **URL**
+
+    /api/v1/templates/:id/medias
+
+* **Method**
+
+    POST
+
+* **URL Params**
+
+    | Name | Rule | Default | Comment |
+    | --- | --- | --- | --- |
+    | id | Required, integer | -- | The custom template id |
+
+* **Data Params**
+
+    | Name | Rule | Default | Comment |
+    | --- | --- | --- | --- |
+    | medias | Required, array, size (min: 1) | -- | List of required medias for this template |
+    | medias.*.placeholder | Required, string, length (min: 1) | -- | Placeholder the same as exported on the AEP file |
+    | medias.*.type | Required, string, in (image, text) | image | Type of media |
+    | medias.*.color | Optional, string | null | Color of media |
+    | medias.*.default_value | Optional, string | null | Default value |
+    | medias.*.preview_path | Optional, string | null | Preview path |
+    | medias.*.position | Optional, int | Array Index/Key | Media position to adjust the order |
+
+* **Success Response**
+
+    * **Code:** 200 </br>
+    * **Content:**
+      ```json
+        {
+            "template_id": 1,
+            "message": "The medias has been added successfully."
+        }
+      ```
+
+* **Error Response**
+
+    * **Code:** 404 </br>
+    * **Content:**
+        ```json
+            {
+                "message": "The requested template does not exists!"
+            }
+        ```
+        
+    * **Code:** 400 </br>
+    * **Content:**
+        ```json
+            {
+                "message": ":attribute validation failed!"
+            }
+        ```
+
+---
+**Update an exists media for a custom template**
+---
+
+Update an exists media for a custom template.
+
+* **URL**
+
+    /api/v1/templates/medias/:id
+
+* **Method**
+
+    PUT
+
+* **URL Params**
+
+    | Name | Rule | Default | Comment |
+    | --- | --- | --- | --- |
+    | id | Required, integer | -- | The template media id |
+
+* **Data Params**
+
+    | Name | Rule | Default | Comment |
+    | --- | --- | --- | --- |
+    | media.placeholder | Optional, string, length (min: 1) | -- | Placeholder the same as exported on the AEP file |
+    | media.type | Optional, string, in (image, text) | image | Type of media |
+    | media.color | Optional, string | null | Color of media |
+    | media.default_value | Optional, string | null | Default value |
+    | media.preview_path | Optional, string | null | Preview path |
+    | media.position | Optional, int | Array Index/Key | Media position to adjust the order |
+
+* **Success Response**
+
+    * **Code:** 200 </br>
+    * **Content:**
+      ```json
+        {
+            "media_id": 1,
+            "message": "The media has been updated successfully."
+        }
+      ```
+
+* **Error Response**
+
+    * **Code:** 404 </br>
+    * **Content:**
+        ```json
+            {
+                "message": "The requested media does not exists!"
+            }
+        ```
+        
+    * **Code:** 400 </br>
+    * **Content:**
+        ```json
+            {
+                "message": ":attribute validation failed!"
+            }
+        ```
+  
+---
+**Delete an exists media for a custom template**
+---
+
+Delete an exists media for a custom template.
+
+* **URL**
+
+    /api/v1/templates/medias/:id
+
+* **Method**
+
+    DELETE
+
+* **URL Params**
+
+    | Name | Rule | Default | Comment |
+    | --- | --- | --- | --- |
+    | id | Required, integer | -- | The template media id |
+
+* **Data Params**
+
+    None
+
+* **Success Response**
+
+    * **Code:** 200 </br>
+    * **Content:**
+      ```json
+        {
+            "message": "The media has been deleted successfully."
+        }
+      ```
+
+* **Error Response**
+
+    * **Code:** 404 </br>
+    * **Content:**
+        ```json
+            {
+                "message": "The requested media does not exists!"
+            }
+        ```
         
 ---
 **Video automation Job status**
