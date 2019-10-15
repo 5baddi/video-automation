@@ -418,7 +418,7 @@ class VideoAutomationController extends Controller
                 return response()->json(['message' => "You must upload the medias!"], 400);
             elseif($customTemplate->enabled != 1)
                 return response()->json(['message' => "This template not enabled or not for use!"], 400);
-            elseif(sizeof($body['inputs']) != $customTemplateMedias->count())
+            elseif(sizeof($body['inputs']) < $customTemplateMedias->whereNotIn('type', ['text', 'color'])->count())
                 return response()->json(['message' => "The submitted media are not the same as those required by the video template!"], 400);
 
             // Validation rules
@@ -500,7 +500,7 @@ class VideoAutomationController extends Controller
                     $renderJob->update();
                 }
 
-                return response()->json($renderJob->toArray());
+                return response()->json(['data' => $renderJob->toArray()]);
             }
         }catch(BadResponseException $ex){
             switch($ex->getResponse()->getStatusCode()){
