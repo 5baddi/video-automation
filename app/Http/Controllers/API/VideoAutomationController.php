@@ -94,7 +94,7 @@ class VideoAutomationController extends Controller
         
         // Copy the preview
         if(isset($data['preview_path']))
-            $customTemplate->preview_path = $this->copyFileToLocalDisk($data['preview_path'], AutomationApp::TEMPLATES_DIRECTORY_NAME, $customTemplate->id);
+            $customTemplate->preview_path = $this->copyFileToPublicDisk($data['preview_path'], AutomationApp::TEMPLATES_DIRECTORY_NAME, $customTemplate->id);
 
         // Store the template info
         $customTemplate->name = $data['name'];
@@ -120,7 +120,7 @@ class VideoAutomationController extends Controller
             // Copy the media preview
             if(isset($media['preview_path'])){
                 $mediaDirectory = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . 'medias' . DIRECTORY_SEPARATOR;
-                $templateMedia->preview_path = $this->copyFileToLocalDisk($media['preview_path'], $mediaDirectory);
+                $templateMedia->preview_path = $this->copyFileToPublicDisk($media['preview_path'], $mediaDirectory);
             }
 
             $customTemplate->medias()->save($templateMedia);
@@ -175,7 +175,7 @@ class VideoAutomationController extends Controller
         
         // Copy the preview
         if(isset($data['preview_path']))
-            $customTemplate->preview_path = $this->copyFileToLocalDisk($data['preview_path'], AutomationApp::TEMPLATES_DIRECTORY_NAME, $customTemplate->id);
+            $customTemplate->preview_path = $this->copyFileToPublicDisk($data['preview_path'], AutomationApp::TEMPLATES_DIRECTORY_NAME, $customTemplate->id);
 
         // Store the template info
         $customTemplate->name = $data['name'];
@@ -213,7 +213,7 @@ class VideoAutomationController extends Controller
             // Copy the media preview
             if(isset($media['preview_path'])){
                 $mediaDirectory = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . 'medias' . DIRECTORY_SEPARATOR;
-                $templateMedia->preview_path = $this->copyFileToLocalDisk($media['preview_path'], $mediaDirectory);
+                $templateMedia->preview_path = $this->copyFileToPublicDisk($media['preview_path'], $mediaDirectory);
             }
 
             // Add as a new media
@@ -247,6 +247,11 @@ class VideoAutomationController extends Controller
             
         // Delete the custom template model also the relations
         $customTemplate->delete();
+
+        // Remove the template preview & medias
+        $templtaeDirectory = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id;
+        if(is_dir($templtaeDirectory))
+            rmdir($templtaeDirectory);
 
         return response()->json(['message' => "The " . $customTemplate->name . " has been deleted successfully."], 200);
     }
@@ -306,7 +311,7 @@ class VideoAutomationController extends Controller
         // Copy the media preview
         if(isset($media['preview_path'])){
             $mediaDirectory = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . 'medias' . DIRECTORY_SEPARATOR;
-            $templateMedia->preview_path = $this->copyFileToLocalDisk($media['preview_path'], $mediaDirectory);
+            $templateMedia->preview_path = $this->copyFileToPublicDisk($media['preview_path'], $mediaDirectory);
         }
 
         $templateMedia->save();
@@ -359,7 +364,7 @@ class VideoAutomationController extends Controller
         // Copy the media preview
         if(isset($media['preview_path'])){
             $mediaDirectory = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $templateMedia->template_id . DIRECTORY_SEPARATOR . 'medias' . DIRECTORY_SEPARATOR;
-            $templateMedia->preview_path = $this->copyFileToLocalDisk($media['preview_path'], $mediaDirectory);
+            $templateMedia->preview_path = $this->copyFileToPublicDisk($media['preview_path'], $mediaDirectory);
         }
 
         $templateMedia->update();
@@ -382,6 +387,10 @@ class VideoAutomationController extends Controller
             
         // Delete the custom template model also the relations
         $templateMedia->delete();
+
+        // Delete the media preview
+        if(!is_null($templateMedia->preview_path) && file_exists($templateMedia->preview_path))
+            unlink($templateMedia->preview_path);
 
         return response()->json(['message' => "The media has been deleted successfully."], 200);
     }
@@ -443,6 +452,9 @@ class VideoAutomationController extends Controller
             // Prepare the callback/notification url
             $renderJob->template_id = $customTemplate->id;
             $renderJob->status = RenderJob::DEFAULT_STATUS;
+            $renderJob->created_at = date('Y-m-d H:i:s');
+            $renderJob->updated_at = null;
+            $renderJob->finished_at = null;
             $renderJob->save();
 
             // Re-form the body
@@ -484,9 +496,11 @@ class VideoAutomationController extends Controller
                     $renderJob->progress = $content['renderStatus']['progressPercent'];
                     $renderJob->left_seconds = $content['renderStatus']['etlSec'];
                     $renderJob->output_name = $fileName;
-                    $renderJob->output_url = $content['outputUrls']['mainFile'];
+                    // $renderJob->output_url = DIRECTORY_SEPARATOR . AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . date('Ymd') . DIRECTORY_SEPARATOR . pathinfo($content['outputUrls']['mainFile'], PATHINFO_BASENAME);
+                    $renderJob->output_path = DIRECTORY_SEPARATOR . AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . date('Ymd') . DIRECTORY_SEPARATOR . str_replace(' ', '_', strtolower($fileName)) . '.' . pathinfo($content['outputUrls']['mainFile'], PATHINFO_EXTENSION);
                     $renderJob->created_at = date('Y-m-d H:i:s', strtotime($content['created']));
-                    $renderJob->finished_at = !is_null($content['finished']) ? date('Y-m-d H:i:s', strtotime($content['finished'])) : null;
+                    $renderJob->finished_at = date('Y-m-d H:i:s');
+                    $renderJob->finished_at = isset($content['finished']) ? date('Y-m-d H:i:s', strtotime($content['finished'])) : null;
                     
                     $renderJob->update();
                 }else{
@@ -495,12 +509,13 @@ class VideoAutomationController extends Controller
                     $renderJob->message = $content['renderStatus']['message'];
                     $renderJob->progress = $content['renderStatus']['progressPercent'];
                     $renderJob->left_seconds = $content['renderStatus']['etlSec'];
-                    $renderJob->finished_at = !is_null($content['finished']) ? date('Y-m-d H:i:s', strtotime($content['finished'])) : null;
+                    $renderJob->finished_at = date('Y-m-d H:i:s');
+                    $renderJob->finished_at = isset($content['finished']) ? date('Y-m-d H:i:s', strtotime($content['finished'])) : null;
                     
                     $renderJob->update();
                 }
 
-                return response()->json(['data' => $renderJob->toArray()]);
+                return response()->json(['job_id' => $renderJob->id, 'message' => "The rendering job was successfully created. please wait until finished..."]);
             }
         }catch(BadResponseException $ex){
             switch($ex->getResponse()->getStatusCode()){
@@ -523,75 +538,36 @@ class VideoAutomationController extends Controller
      *
      * @param int $renderID
      * @param string $action
-     * @return JsonResponse
+     * @return JsonResponse|BinaryFileResponse
      */
-    public function status(int $renderID, string $action = null) : JsonResponse
+    public function status(int $renderID, string $action = null)
+    {        
+        // Fetch if this render job exists
+        $renderJob = RenderJob::find($renderID);
+        if(is_null($renderJob))
+            return response()->json(['message' => "Job does not exists!"], 404);
+        elseif(is_null($renderJob->vau_job_id)) 
+            return response()->json(['message' => "Job requested not created yet!"], 400);
+
+        // Refresh the render job details
+        if($renderJob->status != 'done')
+            app(CronController::class)->notify($renderJob->id);
+ 
+        // Download the generated file
+        if($renderJob->status == 'done' && !is_null($action) && $action == 'download' && file_exists($renderJob->output_path))
+            return response()->download($renderJob->output_path, pathinfo($renderJob->output_path, PATHINFO_BASENAME))->deleteFileAfterSend();
+
+        return response()->json(['data' => $renderJob]);
+    }
+
+    public function download(int $createdAt, string $fileName)
     {
-        try{
-            // Fetch if this render job exists
-            $renderJob = RenderJob::find($renderID);
-            if(is_null($renderJob))
-                return response()->json(['message' => "Job does not exists!"], 404);
-            elseif(is_null($renderJob->vau_job_id)) 
-                return response()->json(['message' => "Job requested not created yet!"], 400);
-
-            // Init Guzzle client
-            $headers = [
-                'X-AUTH-TOKEN'  =>  AutomationApp::ACCESS_TOKEN
-            ];
-            $client = new GuzzleClient(['headers' => $headers]);
-
-            // Send the requet to vau API
-            $response = $client->request(
-                'GET',
-                AutomationApp::API_URL . '/v1/jobs/' . $renderJob->vau_job_id, 
-                [
-                    // TODO: enable the verification on prod
-                    'verify'    =>  false
-                ]
-            );
-
-            // Handle the response
-            if($response->getStatusCode() === 200){
-                // Content of response
-                $content = json_decode($response->getBody()->getContents(), true);
-                $result = [
-                    'job'       =>  $content['id'],
-                    'createdAt' =>  $content['created'],
-                    'status'    =>  $content['renderStatus']['state'],
-                    'progress'  =>  $content['renderStatus']['progressPercent'],
-                    'left'      =>  $content['renderStatus']['etlSec'],
-                    'message'   =>  $content['renderStatus']['message'],
-                    'file'      =>  $content['outputUrls']['mainFile'],
-                    'finishedAt'=>  $content['finished']
-                    //'name'      =>  $content['name']
-                ];
-
-                // If status is done and action equal download file
-                if($result['status'] == 'done' && !is_null($action) && $action == 'download' && strpos($result['message'], "Output files uploaded to storage") !== false){
-                    // Copy online generated file to temp file
-                    $fileName = "test.mp4";
-                    $tempFile = tempnam(sys_get_temp_dir(), $fileName);
-                    copy($result['file'], $tempFile);
-
-                    return response()->download($tempFile, $fileName)->deleteFileAfterSend();
-                }
-
-                return response()->json(['data' => $result]);
-            }
-        }catch(BadResponseException $ex){
-            switch($ex->getResponse()->getStatusCode()){
-                case 404:
-                    return response()->json(['message' => "The video render job does not exist! please try again or contact support"], 404);
-                break;
-                case 400:
-                    return response()->json(['message' => "Incorrect video render job identity! please try again or contact support"], 400);
-                break;
-                default:
-                    return response()->json(['message' => AutomationApp::INTERNAL_SERVER_ERROR], 500);
-                break;
-            }
-        }
+        $outputPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $createdAt . DIRECTORY_SEPARATOR . strtolower($fileName);
+        $exists = Storage::disk('local')->exists($outputPath);
+        if(!$exists)
+            return response()->json(['message' => "The requested file does not exists!"], 404);
+        
+        return Storage::download($outputPath, strtolower($fileName));
     }
 
     /**
@@ -600,7 +576,7 @@ class VideoAutomationController extends Controller
      * @param string $path
      * @return string|null
      */
-    private function copyFileToLocalDisk(string $path, string $directory = null, string $uniqueID = null) : ?string
+    private function copyFileToPublicDisk(string $path, string $directory = null, string $uniqueID = null) : ?string
     {
         if(!is_null($path)){
             $fileExtension = pathinfo($path, PATHINFO_EXTENSION);
@@ -615,10 +591,10 @@ class VideoAutomationController extends Controller
             // Save file to local disk
             if(!is_null($directory) && !is_null($uniqueID)){
                 $targetDirectory = $directory . DIRECTORY_SEPARATOR . $uniqueID . DIRECTORY_SEPARATOR;
-                Storage::disk('public')->put($targetDirectory . $demoFileName, file_get_contents($tempFile));
+                Storage::disk('public')->put($targetDirectory . strtolower($demoFileName), file_get_contents($tempFile));
             }
 
-            return $demoFileName;
+            return strtolower($demoFileName);
         }
 
         // If not success return a null path

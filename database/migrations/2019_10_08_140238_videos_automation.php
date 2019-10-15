@@ -50,7 +50,7 @@ class VideosAutomation extends Migration
             $table->string('status')->default('queued');
             $table->string('message')->default(null);
             $table->string('output_name')->default(null);
-            $table->string('output_url')->default(null);
+            $table->string('output_path')->default(null);
             $table->integer('progress')->default(0);
             $table->integer('left_seconds')->default(0);
             $table->foreign('template_id')->references('id')->on('custom_templates');

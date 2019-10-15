@@ -25,7 +25,7 @@ class RenderJob extends Model
         'status',
         'message',
         'output_name',
-        'output_url'
+        'output_path'
     ];
 
     /**
