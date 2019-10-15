@@ -553,9 +553,9 @@ class VideoAutomationController extends Controller
         if($renderJob->status != 'done')
             app(CronController::class)->notify($renderJob->id);
  
-        // Download the generated file
-        if($renderJob->status == 'done' && !is_null($action) && $action == 'download' && file_exists($renderJob->output_path))
-            return response()->download($renderJob->output_path, pathinfo($renderJob->output_path, PATHINFO_BASENAME))->deleteFileAfterSend();
+        // // Download the generated file
+        // if($renderJob->status == 'done' && !is_null($action) && $action == 'download' && file_exists($renderJob->output_path))
+        //     return response()->download($renderJob->output_path, pathinfo($renderJob->output_path, PATHINFO_BASENAME))->deleteFileAfterSend();
 
         return response()->json(['data' => $renderJob]);
     }

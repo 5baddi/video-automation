@@ -34,7 +34,8 @@ Route::group(['middleware' => 'api', 'namespace' => 'API', 'prefix' => 'v1'], fu
     // Start a render job
     Route::post('/render', 'VideoAutomationController@render');
     // Get job progress
-    Route::get('/status/{renderID}/{action?}', 'VideoAutomationController@status')->where(['renderID' => '[0-9]+'])->name('job.status');
+    // Route::get('/status/{renderID}/{action?}', 'VideoAutomationController@status')->where(['renderID' => '[0-9]+'])->name('job.status');
+    Route::get('/status/{renderID}', 'VideoAutomationController@status')->name('job.status');
     Route::get('/download/{createdAt}/{fileName}', 'VideoAutomationController@download')->where(['createdAt' => '[0-9]+'])->name('va.download');
     // Notify after render job done
     Route::get('/notify/{renderID}', 'CronController@notify')->where(['renderID' => '[0-9]+'])->name('cron.notify');
