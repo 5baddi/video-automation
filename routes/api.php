@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 */
 
 
-Route::group(['middleware' => 'api', 'namespace' => 'API', 'prefix' => 'v1'], function () {
+Route::group(['middleware' => ['api', 'cors'], 'namespace' => 'API', 'prefix' => 'v1'], function () {
     // Retrieve all the custom templates
     Route::get('/templates', 'VideoAutomationController@index');
     // Retrieve a custom templates by ID
