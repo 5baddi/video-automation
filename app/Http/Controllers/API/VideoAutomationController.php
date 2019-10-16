@@ -32,6 +32,41 @@ class VideoAutomationController extends Controller
         // Return no content if no data
         return response()->json([], 204);
     }
+    
+    /**
+     * Retrieve all the custom templates thumbnails
+     *
+     * @return JsonResponse
+     */
+    public function templatesThumbnails() : JsonResponse
+    {
+        // Retrieve all custom templates
+        $customTemplates = CustomTemplate::all();
+
+        if($customTemplates->count() > 0){
+            // Get the preview and thumbnail relative url
+            foreach($customTemplates as $key => $customTemplate){
+                // $thumb = "https://dummyimage.com/1:1x1280.jpg?text=square";
+                // if($customTemplate->rotation == 'portrait')
+                //     $thumb = "https://dummyimage.com/16:9x1280.jpg?text=portrait";
+                // elseif($customTemplate->rotation == 'landscape')
+                //     $thumb = "https://dummyimage.com/9:16x1280.jpg?text=landscape";
+
+                // $tempFile = tempnam(sys_get_temp_dir(), 'preview.jpg');
+                // copy($thumb, $tempFile);
+
+                // $targetDirectory = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR;
+                // die($targetDirectory);
+                // Storage::disk('public')->put($targetDirectory . 'thumbnail.jpg', file_get_contents($tempFile));
+                $customTemplate->thumbnail_path = Storage::disk('public')->url($customTemplate->thumbnail_path);
+            }
+
+            return response()->json(['data' => $customTemplates]);
+        }
+
+        // Return no content if no data
+        return response()->json([], 204);
+    }
 
     /**
      * Retrieve custom template by ID
@@ -103,6 +138,7 @@ class VideoAutomationController extends Controller
             $customTemplate->package = $data['package'];
         if(isset($data['version']))
             $customTemplate->version = $data['version'];
+        $customTemplate->rotation = (isset($data['rotation'])) ? $data['rotation'] : AutomationApp::DEFAULT_ROTATION;
         $customTemplate->enabled = (isset($data['enabled']) && in_array($data['enabled'], [0, 1])) ? $data['enabled'] : 1;
         // $customTemplate->created_at = (isset($data['created_at'])) ? $data['created_at'] : date('Y-m-d H:i:s');
         $customTemplate->save();
@@ -184,6 +220,8 @@ class VideoAutomationController extends Controller
             $customTemplate->package = $data['package'];
         if(isset($data['version']))
             $customTemplate->version = $data['version'];
+        if(isset($data['rotation']))
+            $customTemplate->rotation = $data['rotation'];
         $customTemplate->enabled = (isset($data['enabled']) && in_array($data['enabled'], [0, 1])) ? $data['enabled'] : 1;
         $customTemplate->updated_at = date('Y-m-d H:i:s');
         // $customTemplate->created_at = (isset($data['created_at'])) ? $data['created_at'] : date('Y-m-d H:i:s');
@@ -249,9 +287,13 @@ class VideoAutomationController extends Controller
         $customTemplate->delete();
 
         // Remove the template preview & medias
-        $templtaeDirectory = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id;
-        if(is_dir($templtaeDirectory))
-            rmdir($templtaeDirectory);
+        $templateDirectory = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id;
+        if(is_dir($templateDirectory))
+            rmdir($templateDirectory);
+
+        // Force delete the directory
+        if(is_dir($templateDirectory))
+            shell_exec("rm -rf ${templateDirectory}");
 
         return response()->json(['message' => "The " . $customTemplate->name . " has been deleted successfully."], 200);
     }

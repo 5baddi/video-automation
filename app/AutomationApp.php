@@ -11,6 +11,14 @@ class AutomationApp
 
     const TEMPLATES_DIRECTORY_NAME = "va_templates";
     const OUTPUT_DIRECTORY_NAME = "va_outputs";
+
+    const DEFAULT_ROTATION = "sqaure";
     
     const INTERNAL_SERVER_ERROR = "Internal server error! please try again or contact support";
+
+    const DIMENSIONS = [
+        'landscape'     => ['width' => 1280, 'height' => 720],
+        'portrait'      => ['width' => 1280, 'height' => 2275.56],
+        'square'        => ['width' => 1280, 'height' => 1280]
+    ];
 }

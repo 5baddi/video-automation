@@ -70,7 +70,7 @@ class Handler extends ExceptionHandler
         }
         
         // Handle exception with env mode
-        if($exception instanceof \Exception){
+        if($request->is("api/*") && $exception instanceof \Exception){
             $message = AutomationApp::INTERNAL_SERVER_ERROR;
 
             if(env('APP_DEBUG') == true)
