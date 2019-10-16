@@ -12,14 +12,18 @@
 */
 
 // Redirect to the Vue App
-Route::permanentRedirect ('/', '/app');
+// Route::permanentRedirect ('/', '/app');
+Route::permanentRedirect ('/', '/api');
 
 // Vue App
-Route::group(['prefix' => 'app'], function () {
-    Route::get('/welcome',  'ApplicationController@welcome');
-    Route::post('/getDealerByID',  'ApplicationController@getDealerByID');
-    Route::post('/saveForm',  'ApplicationController@saveForm');
-    Route::post('/uploadlogo',  'ApplicationController@uploadlogo');
+// Route::group(['prefix' => 'app'], function () {
+//     Route::any('/{any?}', 'AppController@index')->where('any', '.*');
+// });
 
-    Route::any('/{any?}', 'AppController@index')->where('any', '.*');
+// CDN routes
+Route::group(['prefix' => 'cdn'], function () {
+    // Download generated video
+    Route::get('/download/{createdAt}/{fileName}', 'CDNController@downloadOutputVideo')->where(['createdAt' => '[0-9]+'])->name('va.download');
+    // Retrieve the custom template thumbnail
+    Route::get('/thumbnails/{customTemplateID}/{fileName}/{width?}/{height?}', 'CDNController@retrieveCustomTemplateThumbnail')->where(['customTemplateID' => '[0-9]+', 'width' => '[0-9]+', 'height' => '[0-9]+'])->name('va.thumbnail');
 });

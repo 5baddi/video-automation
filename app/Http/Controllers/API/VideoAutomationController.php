@@ -602,16 +602,6 @@ class VideoAutomationController extends Controller
         return response()->json(['data' => $renderJob]);
     }
 
-    public function download(int $createdAt, string $fileName)
-    {
-        $outputPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $createdAt . DIRECTORY_SEPARATOR . strtolower($fileName);
-        $exists = Storage::disk('local')->exists($outputPath);
-        if(!$exists)
-            return response()->json(['message' => "The requested file does not exists!"], 404);
-        
-        return Storage::download($outputPath, strtolower($fileName));
-    }
-
     /**
      * Copy file to the local disk
      *
