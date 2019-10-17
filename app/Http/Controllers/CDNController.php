@@ -48,7 +48,7 @@ class CDNController extends Controller
         $thumbnailPath = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplateID . DIRECTORY_SEPARATOR . strtolower($fileName);
         $exists = Storage::disk('public')->exists($thumbnailPath);
         if(!$exists)
-            return response()->json(['message' => "The requested file does not exists!"], 404);
+            abort(404);
 
         // Resize the thumbnail
         if(!is_null($width) && !is_null($height)){
@@ -65,6 +65,40 @@ class CDNController extends Controller
 
         // Show the thumbnail image
         return response($thumbnail)->header('Content-Type', $thumbnailSize['mime']);
+    }
+    
+    /**
+     * Retrieve the custom template demo video
+     *
+     * @param string $collection
+     * @param int $customTemplateID
+     * @param string $fileName
+     * @return Response
+     */
+    public function retrieveCustomTemplateFiles(string $collection, int $customTemplateID, string $fileName)
+    {
+        $customTemplate = CustomTemplate::find($customTemplateID);
+        if(is_null($customTemplate))
+            abort(404);
+
+        // Check if already exists on the public disk
+        $path = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplateID . DIRECTORY_SEPARATOR;
+        // if the collection is medias
+        if(in_array($collection, ['medias', 'defaults']))
+            $path .= $collection . DIRECTORY_SEPARATOR;
+        $path .= strtolower($fileName);
+
+        // Check file is exists
+        $exists = Storage::disk('public')->exists($path);
+        if(!$exists)
+            abort(404);
+
+        // Get the image mime type also the content
+        $file = Storage::disk('public')->get($path);
+        $path = Storage::disk('public')->path($path);
+
+        // Show the thumbnail image
+        return response($file)->header('Content-Type', mime_content_type($path));
     }
 
     /**

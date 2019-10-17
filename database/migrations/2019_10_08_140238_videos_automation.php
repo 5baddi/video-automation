@@ -21,8 +21,8 @@ class VideosAutomation extends Migration
             $table->string('package')->nullable();
             $table->string('version')->nullable();
             $table->string('rotation')->default('square');
-            $table->string('preview_path')->nullable();
-            $table->string('thumbnail_path')->nullable();
+            $table->string('preview_url')->nullable();
+            $table->string('thumbnail_url')->nullable();
             $table->smallInteger('enabled')->default(1);
             $table->timestamps();
         });

@@ -25,8 +25,8 @@ class CustomTemplate extends Model
         'package',
         'version',
         'rotation',
-        'preview_path',
-        'thumbnail_path'
+        'preview_url',
+        'thumbnail_url'
     ];
 
     /**

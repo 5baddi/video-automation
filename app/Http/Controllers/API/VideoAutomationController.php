@@ -36,33 +36,16 @@ class VideoAutomationController extends Controller
     /**
      * Retrieve all the custom templates thumbnails
      *
+     * @param string $rotation
      * @return JsonResponse
      */
-    public function templatesThumbnails() : JsonResponse
+    public function templatesThumbnails(string $rotation = "square") : JsonResponse
     {
         // Retrieve all custom templates
-        $customTemplates = CustomTemplate::all();
+        $customTemplates = CustomTemplate::where('rotation', $rotation)->get();
 
-        if($customTemplates->count() > 0){
-            // Get the preview and thumbnail relative url
-            foreach($customTemplates as $key => $customTemplate){
-                // $thumb = "https://dummyimage.com/1:1x1280.jpg?text=square";
-                // if($customTemplate->rotation == 'portrait')
-                //     $thumb = "https://dummyimage.com/16:9x1280.jpg?text=portrait";
-                // elseif($customTemplate->rotation == 'landscape')
-                //     $thumb = "https://dummyimage.com/9:16x1280.jpg?text=landscape";
-
-                // $tempFile = tempnam(sys_get_temp_dir(), 'preview.jpg');
-                // copy($thumb, $tempFile);
-
-                // $targetDirectory = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR;
-                // die($targetDirectory);
-                // Storage::disk('public')->put($targetDirectory . 'thumbnail.jpg', file_get_contents($tempFile));
-                $customTemplate->thumbnail_path = Storage::disk('public')->url($customTemplate->thumbnail_path);
-            }
-
+        if($customTemplates->count() > 0)
             return response()->json(['data' => $customTemplates]);
-        }
 
         // Return no content if no data
         return response()->json([], 204);
@@ -101,7 +84,8 @@ class VideoAutomationController extends Controller
             'rotation'      =>  'required|in:' . implode(',', CustomTemplate::ROTAIONS),
             'package'       =>  'nullable|string',
             'version'       =>  'nullable',
-            'preview_path'  =>  'nullable|string',
+            'demo'          => 'nullable|mimetypes:video/mp4,video/avi,video/mpeg,video/quicktime',
+            'thumbnail'     => 'nullable|mimes:jpg,jpeg,bmp,png,gif',
             'enabled'       =>  'nullable|in:0,1',
             'medias'        =>  'required|min:1',
             'medias.*.placeholder'  =>  'required|string',
@@ -127,10 +111,6 @@ class VideoAutomationController extends Controller
         // Init custom template obj
         $customTemplate = new CustomTemplate();
         
-        // Copy the preview
-        if(isset($data['preview_path']))
-            $customTemplate->preview_path = $this->copyFileToPublicDisk($data['preview_path'], AutomationApp::TEMPLATES_DIRECTORY_NAME, $customTemplate->id);
-
         // Store the template info
         $customTemplate->name = $data['name'];
         $customTemplate->vau_id = $data['vau_id'];
@@ -140,8 +120,34 @@ class VideoAutomationController extends Controller
             $customTemplate->version = $data['version'];
         $customTemplate->rotation = (isset($data['rotation'])) ? $data['rotation'] : AutomationApp::DEFAULT_ROTATION;
         $customTemplate->enabled = (isset($data['enabled']) && in_array($data['enabled'], [0, 1])) ? $data['enabled'] : 1;
-        // $customTemplate->created_at = (isset($data['created_at'])) ? $data['created_at'] : date('Y-m-d H:i:s');
+        $customTemplate->created_at = (isset($data['created_at'])) ? $data['created_at'] : date('Y-m-d H:i:s');
         $customTemplate->save();
+
+        // Upload the attached preview and thumbnail
+        if($request->hasfile('demo') || $request->hasFile('thumbnail')){
+            try{
+                // Parse the target path and file names
+                $targetTemplatePath = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id;
+                $demoFileName = strtolower(str_replace(' ', '_', $customTemplate->name)) . '.' . $request->file('demo')->getClientOriginalExtension();
+                $thumbnailFileName = strtolower(str_replace(' ', '_', $customTemplate->name)) . '.' . $request->file('thumbnail')->getClientOriginalExtension();
+                
+                // Upload the demo video
+                if($request->hasFile('demo')){
+                    $request->file('demo')->storeAs($targetTemplatePath, $demoFileName, 'public');
+                    $customTemplate->preview_url = route('cdn.cutomTemplate.files', ['collection' =>  'demos', 'customTemplateID' => $customTemplate->id, 'fileName' => $demoFileName]);
+                }
+                
+                // Upload the thumbnail
+                if($request->hasFile('thumbnail')){
+                    $customTemplate->thumbnail_url = route('cdn.cutomTemplate.files', ['collection' =>  'thumbnails', 'customTemplateID' => $customTemplate->id, 'fileName' => $thumbnailFileName]);
+                    $request->file('thumbnail')->storeAs($targetTemplatePath, $thumbnailFileName, 'public');
+                }
+    
+                $customTemplate->update();
+            }catch(\Exception $ex){
+                throw new \Exception("Demo video and thumbnail attached are not allowed or damaged!");
+            }
+        }
 
         // Adjust the template medias
         foreach($data['medias'] as $key => $media){
@@ -149,14 +155,40 @@ class VideoAutomationController extends Controller
             $templateMedia->template_id = $customTemplate->id;
             $templateMedia->placeholder = str_replace(' ', '_', $media['placeholder']);
             $templateMedia->type = isset($media['type']) ? $media['type'] : TemplateMedia::DEFAULT_TYPE;
-            if(isset($media['default_value']) && isset($media['type']) && $media['type'] != TemplateMedia::DEFAULT_TYPE)
-                $templateMedia->default_value = $media['default_value'];
-            (!isset($media['position'])) ? $key + 1 : $media['position'];
+            $templateMedia->position = (!isset($media['position'])) ? $key + 1 : $media['position'];
 
-            // Copy the media preview
-            if(isset($media['preview_path'])){
-                $mediaDirectory = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . 'medias' . DIRECTORY_SEPARATOR;
-                $templateMedia->preview_path = $this->copyFileToPublicDisk($media['preview_path'], $mediaDirectory);
+            if(isset($media['default_value']) && isset($media['type']) && $media['type'] != TemplateMedia::DEFAULT_TYPE){
+                $templateMedia->default_value = $media['default_value'];
+            }
+            // Copy the remote default value to local
+            elseif(filter_var($templateMedia->default_value, FILTER_VALIDATE_URL)){
+                $fileName = strtolower(str_replace(' ', '_', pathinfo($templateMedia->default_value, PATHINFO_BASENAME)));
+                $temp = tempnam(sys_get_temp_dir(), $fileName);
+                $directory = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . 'defaults';
+
+                // Check if file exists
+                $path = $directory . DIRECTORY_SEPARATOR . $fileName;
+                $fullPath = Storage::disk('public')->path($path);
+                if(!Storage::disk('public')->exists($path))
+                    copy($temp, $fullPath);
+
+                // Set the default value url
+                $templateMedia->default_value = route('cdn.cutomTemplate.files', ['collection' =>  'defaults', 'customTemplateID' => $customTemplate->id, 'fileName' => $fileName]);
+            }
+
+            // Upload media preview
+            if($request->hasFile('media' . $key) && $templateMedia->type == TemplateMedia::DEFAULT_TYPE){
+                try{
+                    // Parse the target path and file names
+                    $targetTemplatePath = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . 'medias';
+                    $mediaFileName = $key . '.' . $request->file('media' . $key)->getClientOriginalExtension();
+                    
+                    // Upload the demo video
+                    $request->file('demo')->storeAs($targetTemplatePath, $mediaFileName, 'public');
+                    $templateMedia->preview_url = route('cdn.cutomTemplate.files', ['collection' =>  'medias', 'customTemplateID' => $customTemplate->id, 'fileName' => $mediaFileName]);
+                }catch(\Exception $ex){
+                    throw new \Exception("Media preview are not allowed or damaged!");
+                }
             }
 
             $customTemplate->medias()->save($templateMedia);

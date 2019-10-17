@@ -24,7 +24,7 @@ Route::group(['middleware' => ['api', 'cors'], 'namespace' => 'API'], function (
 Route::group(['middleware' => ['api', 'cors'], 'namespace' => 'API', 'prefix' => 'v1'], function () {
     // Retrieve all the custom templates
     Route::get('/templates', 'VideoAutomationController@index');
-    Route::get('/templates/thumbnails', 'VideoAutomationController@templatesThumbnails');
+    Route::get('/templates/thumbnails/{rotation?}', 'VideoAutomationController@templatesThumbnails');
     // Retrieve a custom templates by ID
     Route::get('/templates/{templateID}', 'VideoAutomationController@show')->where(['templateID' => '[0-9]+']);
     // Store new custom template
