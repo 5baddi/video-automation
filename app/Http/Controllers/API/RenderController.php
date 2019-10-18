@@ -7,6 +7,7 @@ use App\AutomationApp;
 use App\TemplateMedia;
 use App\CustomTemplate;
 use Illuminate\Http\Request;
+use GuzzleHttp\RequestOptions;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use GuzzleHttp\Client as GuzzleClient;
@@ -114,20 +115,15 @@ class RenderController extends Controller
 
             // Init Guzzle client
             $headers = [
-                'Content-Type'  =>  'application/json',
+                // 'Content-Type'  =>  'application/json',
                 'X-AUTH-TOKEN'  =>  AutomationApp::ACCESS_TOKEN
             ];
             $client = new GuzzleClient(['headers' => $headers]);
 
             // Send the requet to vau API
-            $response = $client->request(
-                'POST',
-                AutomationApp::API_URL . '/v1/render', 
-                [
-                    // TODO: enable the verification on prod
-                    'verify'    =>  false,
-                    'body'      =>  json_encode($videoData),
-                ]
+            $response = $client->post(
+                AutomationApp::API_URL . '/v1/render',
+                [RequestOptions::JSON => $videoData]
             );
 
             // Handle the response

@@ -102,14 +102,14 @@ class CDNController extends Controller
         if(!$exists)
             abort(404);
 
-        // Force downloading the file
-        $action = $request->query('action');
-        if(!is_null($action) && $action == 'download')
-            return Storage::download($path, strtolower($fileName), ['Content-Type' => 'application/octet-stream', 'Content-Disposition' => "attachment; filename=\"${fileName}\""]);
-
         // Get the image mime type also the content
         $file = Storage::disk($disk)->get($path);
         $path = Storage::disk($disk)->path($path);
+
+        // Force downloading the file
+        $action = $request->query('action');
+        if(!is_null($action) && $action == 'download')
+            return response()->download($path, strtolower($fileName), ['Content-Type' => mime_content_type($path)], 'inline');
 
         // Show the thumbnail image
         return response($file)->header('Content-Type', mime_content_type($path));
