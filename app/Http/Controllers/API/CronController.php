@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\RenderJob;
 use App\AutomationApp;
+use App\CustomTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
@@ -48,6 +49,14 @@ class CronController extends Controller
         if($response->getStatusCode() === 200){
             // Content of response
             $content = json_decode($response->getBody()->getContents(), true);
+
+            // Save the generated video to the private local resources
+            if($renderJob->status == 'done' && strpos($renderJob->message, "Output files uploaded to storage") !== false){
+                $outputName = uniqid() . '_' . pathinfo($content['outputUrls']['mainFile'], PATHINFO_BASENAME);
+                $targetOutputPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $outputName;
+                Storage::disk('local')->put($targetOutputPath . DIRECTORY_SEPARATOR . $outputName, file_get_contents($content['outputUrls']['mainFile']));
+                $renderJob->output_url = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $renderJob->template_id, 'fileName' => $outputName]);
+            }
             
             // Update the render job info
             $renderJob->status = $content['renderStatus']['state'];
@@ -56,10 +65,6 @@ class CronController extends Controller
             $renderJob->left_seconds = $content['renderStatus']['etlSec'];
             $renderJob->finished_at = isset($content['finished']) ? date('Y-m-d H:i:s', strtotime($content['finished'])) : null;
             $renderJob->update();
-
-            // Save the generated video to the private local resources
-            if($renderJob->status == 'done' && strpos($renderJob->message, "Output files uploaded to storage") !== false)
-                $this->copyVAUOutputFile($renderJob->output_path, $content['outputUrls']['mainFile']);
 
             // TODO: send notif to user
 

@@ -21,7 +21,7 @@ Route::permanentRedirect ('/', '/api');
 // });
 
 // CDN routes
-Route::group(['prefix' => 'cdn'], function () {
+Route::group(['middleware' => 'cors', 'prefix' => 'cdn'], function () {
     // Download generated video
     Route::get('/download/{createdAt}/{fileName}', 'CDNController@downloadOutputVideo')->where(['createdAt' => '[0-9]+'])->name('cdn.download');
     // Retrieve the custom template thumbnail

@@ -31,11 +31,11 @@ class VideosAutomation extends Migration
         Schema::create('template_medias', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('template_id');
-            $table->string('placeholder')->nullable(false);
+            $table->unsignedBigInteger('scene')->nullable(false);
+            $table->string('placeholder')->unique()->nullable(false);
             $table->string('type')->default('image');
             $table->string('color')->nullable();
             $table->string('default_value')->nullable();
-            $table->string('preview_path')->nullable();
             $table->string('thumbnail_path')->nullable();
             $table->smallInteger('position')->default(0);
             $table->foreign('template_id')->references('id')->on('custom_templates');

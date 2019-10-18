@@ -47,3 +47,9 @@ Route::group(['middleware' => ['api', 'cors'], 'namespace' => 'API', 'prefix' =>
     Route::get('/notify/{renderID}', 'CronController@notify')->where(['renderID' => '[0-9]+'])->name('cron.notify');
     Route::post('/notify/{renderID}', 'CronController@vauNotify')->where(['renderID' => '[0-9]+'])->name('vau.notify');
 });
+
+// V2 routes
+Route::group(['middleware' => ['api', 'cors'], 'namespace' => 'API', 'prefix' => 'v2'], function () {
+    // Start a render job
+    Route::post('/render', 'RenderController@render');
+});

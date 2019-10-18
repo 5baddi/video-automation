@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\AutomationApp;
 use App\CustomTemplate;
 use Gumlet\ImageResize;
+use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
 
@@ -75,27 +76,40 @@ class CDNController extends Controller
      * @param string $fileName
      * @return Response
      */
-    public function retrieveCustomTemplateFiles(string $collection, int $customTemplateID, string $fileName)
+    public function retrieveCustomTemplateFiles(Request $request, string $collection, int $customTemplateID, string $fileName)
     {
         $customTemplate = CustomTemplate::find($customTemplateID);
         if(is_null($customTemplate))
             abort(404);
 
-        // Check if already exists on the public disk
-        $path = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplateID . DIRECTORY_SEPARATOR;
+        // Disk
+        $disk = "public";
+
+        // Handle directory & disk
+        $path = AutomationApp::TEMPLATES_DIRECTORY_NAME;
+        if($collection == "outputs"){
+            $path = AutomationApp::OUTPUT_DIRECTORY_NAME;
+            $disk = "local";
+        }
+        $path .= DIRECTORY_SEPARATOR . $customTemplateID . DIRECTORY_SEPARATOR;
         // if the collection is medias
         if(in_array($collection, ['medias', 'defaults']))
             $path .= $collection . DIRECTORY_SEPARATOR;
         $path .= strtolower($fileName);
 
         // Check file is exists
-        $exists = Storage::disk('public')->exists($path);
+        $exists = Storage::disk($disk)->exists($path);
         if(!$exists)
             abort(404);
 
+        // Force downloading the file
+        $action = $request->query('action');
+        if(!is_null($action) && $action == 'download')
+            return Storage::download($path, strtolower($fileName), ['Content-Type' => 'application/octet-stream', 'Content-Disposition' => "attachment; filename=\"${fileName}\""]);
+
         // Get the image mime type also the content
-        $file = Storage::disk('public')->get($path);
-        $path = Storage::disk('public')->path($path);
+        $file = Storage::disk($disk)->get($path);
+        $path = Storage::disk($disk)->path($path);
 
         // Show the thumbnail image
         return response($file)->header('Content-Type', mime_content_type($path));

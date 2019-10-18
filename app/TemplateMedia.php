@@ -7,8 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TemplateMedia extends Model
 { 
-    const DEFAULT_TYPE = "image";
-    const ALLOWED_TYPES = ["image", "text"];
+    const SCENE_TYPE = "image";
+    const ALLOWED_TYPES = ["image", "text", "color"];
 
     /**
      * The database table used by the model.
@@ -27,8 +27,7 @@ class TemplateMedia extends Model
         'type',
         'color',
         'default_value',
-        'preview_path',
-        'thumbnail_path'
+        'thumbnail_url'
     ];
 
     /**
@@ -38,6 +37,7 @@ class TemplateMedia extends Model
      */
     protected $casts = [
         'template_id'       => 'integer',
+        'scene'             => 'integer',
         'position'          => 'integer',
         'background_hue'    => 'smallInteger',
     ];
