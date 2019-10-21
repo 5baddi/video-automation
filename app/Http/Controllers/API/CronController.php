@@ -54,7 +54,7 @@ class CronController extends Controller
             if($renderJob->status == 'done' && strpos($renderJob->message, "Output files uploaded to storage") !== false){
                 $outputName = uniqid() . '_' . pathinfo($content['outputUrls']['mainFile'], PATHINFO_BASENAME);
                 $targetOutputPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $outputName;
-                Storage::disk('local')->put($targetOutputPath . DIRECTORY_SEPARATOR . $outputName, file_get_contents($content['outputUrls']['mainFile']));
+                Storage::disk('local')->put($targetOutputPath, file_get_contents($content['outputUrls']['mainFile']));
                 $renderJob->output_url = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $renderJob->template_id, 'fileName' => $outputName]);
             }
             
@@ -90,7 +90,17 @@ class CronController extends Controller
 
         // Get the render job status and update the db
         $content = $request->all();
-        if(!is_null($content) && isset($content['renderStatus']) && sizeof($content['renderStatus']) > 0){       
+        if(!is_null($content) && isset($content['renderStatus']) && sizeof($content['renderStatus']) > 0){
+            // Save the generated video to the private local resources
+            if($renderJob->status == 'done' && strpos($renderJob->message, "Output files uploaded to storage") !== false){
+                $outputName = uniqid() . '_' . pathinfo($content['outputUrls']['mainFile'], PATHINFO_BASENAME);
+                if(!is_null($renderJob->output_name))
+                    $outputName = $renderJob->output_name . '.' . pathinfo($content['outputUrls']['mainFile'], PATHINFO_EXTENSION);
+                $targetOutputPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $outputName;
+                Storage::disk('local')->put($targetOutputPath, file_get_contents($content['outputUrls']['mainFile']));
+                $renderJob->output_url = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $renderJob->template_id, 'fileName' => $outputName]);
+            }
+
             // Update the render job info
             $renderJob->status = $content['renderStatus']['state'];
             $renderJob->message = $content['renderStatus']['message'];
@@ -98,10 +108,6 @@ class CronController extends Controller
             $renderJob->left_seconds = $content['renderStatus']['etlSec'];
             $renderJob->finished_at = !isset($content['finished']) ? date('Y-m-d H:i:s', strtotime($content['finished'])) : null;
             $renderJob->update();
-
-            // Save the generated video to the private local resources
-            if($renderJob->status == 'done' && strpos($renderJob->message, "Output files uploaded to storage") !== false)
-                $this->copyVAUOutputFile($renderJob->output_path, $content['outputUrls']['mainFile']);
 
             // TODO: send notif to user
 

@@ -67,14 +67,14 @@ class RenderController extends Controller
                 foreach($customTemplateMedias->get() as $media){
                     // Attached image
                     if($request->hasFile($media->palceholder)){
-                        $fileName = $request->file($media->placeholder)->getClientOriginalName();
+                        $fileName = strtolower($request->file($media->placeholder)->getClientOriginalName());
                         $targetPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id;
                         
                         if(!Storage::disk('local')->exists($targetPath . DIRECTORY_SEPARATOR . $fileName))
                             $request->file($media->placeholder)->storeAs($targetPath, $fileName, 'local');
 
                         // Relative url
-                        $inputs[$media->placeholder] = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $media->template_id, 'fileName' => $fileName, 'action' => 'download']);
+                        $inputs[$media->placeholder] = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $media->template_id, 'fileName' => $fileName]);
                     }
                     // Ignore not images placeholder
                     elseif($media->type != TemplateMedia::SCENE_TYPE){
@@ -87,7 +87,7 @@ class RenderController extends Controller
                     }
                     // It's image & not attached
                     elseif(!$request->hasFile($media->palceholder)){
-                        $inputs[$media->placeholder] = $media->default_value . '?action=download';
+                        $inputs[$media->placeholder] = $media->default_value;
                     }
                 }
             }catch(\Exception $ex){
@@ -136,6 +136,7 @@ class RenderController extends Controller
                     $renderJob->vau_job_id = $content['id'];
                     $renderJob->status = $content['renderStatus']['state'];
                     $renderJob->message = $content['renderStatus']['message'];
+                    $renderJob->output_name = strtotlower(str_replace(' ', '_', $fileName));
                     $renderJob->progress = $content['renderStatus']['progressPercent'];
                     $renderJob->left_seconds = $content['renderStatus']['etlSec'];
                     $renderJob->created_at = date('Y-m-d H:i:s', strtotime($content['created']));
@@ -147,6 +148,7 @@ class RenderController extends Controller
                     // Update render job info
                     $renderJob->status = $content['renderStatus']['state'];
                     $renderJob->message = $content['renderStatus']['message'];
+                    $renderJob->output_name = strtolower(str_replace(' ', '_', $fileName));
                     $renderJob->progress = $content['renderStatus']['progressPercent'];
                     $renderJob->left_seconds = $content['renderStatus']['etlSec'];
                     $renderJob->finished_at = date('Y-m-d H:i:s');
