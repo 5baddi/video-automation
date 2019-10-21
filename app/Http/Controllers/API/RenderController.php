@@ -136,7 +136,7 @@ class RenderController extends Controller
                     $renderJob->vau_job_id = $content['id'];
                     $renderJob->status = $content['renderStatus']['state'];
                     $renderJob->message = $content['renderStatus']['message'];
-                    $renderJob->output_name = strtotlower(str_replace(' ', '_', $fileName));
+                    $renderJob->output_name = strtolower(str_replace(' ', '_', $fileName));
                     $renderJob->progress = $content['renderStatus']['progressPercent'];
                     $renderJob->left_seconds = $content['renderStatus']['etlSec'];
                     $renderJob->created_at = date('Y-m-d H:i:s', strtotime($content['created']));
