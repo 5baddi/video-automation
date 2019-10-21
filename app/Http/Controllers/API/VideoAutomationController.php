@@ -703,9 +703,8 @@ class VideoAutomationController extends Controller
             return response()->json(['message' => "Job requested not created yet!"], 400);
 
         // Refresh the render job details
-        if($renderJob->status != 'done'){
-            // TODO: update render job on the db
-        }
+        if($renderJob->status != 'done')
+            app(CronController::class)->notify($renderJob->id);
 
         return response()->json(['data' => $renderJob]);
     }

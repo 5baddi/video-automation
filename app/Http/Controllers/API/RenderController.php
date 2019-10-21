@@ -95,7 +95,7 @@ class RenderController extends Controller
             }
 
             // File name
-            $fileName = $body['name'];
+            $fileName = isset($body['name']) ? $body['name'] : uniqid() . '_' . strtolower(str_replace(' ', '_', $customTemplate->name));
 
             // Prepare the callback/notification url
             $renderJob->template_id = $customTemplate->id;
