@@ -242,8 +242,10 @@ class VideoAutomationController extends Controller
             return response()->json(['message' => "The requested template does not exists!"], 404);
         
         // Copy the preview
-        if(isset($data['preview_path']))
-            $customTemplate->preview_path = $this->copyFileToPublicDisk($data['preview_path'], AutomationApp::TEMPLATES_DIRECTORY_NAME, $customTemplate->id);
+        // if(isset($data['preview_path']))
+        //     $customTemplate->preview_path = $this->copyFileToPublicDisk($data['preview_path'], AutomationApp::TEMPLATES_DIRECTORY_NAME, $customTemplate->id);
+
+        // TODO: Upload files to resources
 
         // Store the template info
         $customTemplate->name = $data['name'];
@@ -281,10 +283,12 @@ class VideoAutomationController extends Controller
                 $customTemplate->position = $media['position'];
 
             // Copy the media preview
-            if(isset($media['preview_path'])){
-                $mediaDirectory = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . 'medias' . DIRECTORY_SEPARATOR;
-                $templateMedia->preview_path = $this->copyFileToPublicDisk($media['preview_path'], $mediaDirectory);
-            }
+            // if(isset($media['preview_path'])){
+            //     $mediaDirectory = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . 'medias' . DIRECTORY_SEPARATOR;
+            //     $templateMedia->preview_path = $this->copyFileToPublicDisk($media['preview_path'], $mediaDirectory);
+            // }
+
+            // TODO: Upload files to resources
 
             // Add as a new media
             if(!isset($media['id'])){
@@ -593,9 +597,6 @@ class VideoAutomationController extends Controller
             if($validator->fails())
                 return response()->json(['message' => $validator->getMessageBag()->all()], 400);
 
-            // Verify if some render job already started
-            $this->ClearDieRenderJobs();
-
             // File name
             $fileName = $customTemplate->name;
             if(isset($body['name']))
@@ -670,7 +671,6 @@ class VideoAutomationController extends Controller
                 return response()->json(['job_id' => $renderJob->id, 'message' => "The rendering job was successfully created. please wait until finished..."]);
             }
         }catch(BadResponseException $ex){
-            die($ex->getMessage());
             switch($ex->getResponse()->getStatusCode()){
                 case 400:
                     return response()->json(['message' => "Please verify that the template entries are correct!"], 400);
@@ -703,63 +703,10 @@ class VideoAutomationController extends Controller
             return response()->json(['message' => "Job requested not created yet!"], 400);
 
         // Refresh the render job details
-        if($renderJob->status != 'done')
-            app(CronController::class)->notify($renderJob->id);
- 
-        // // Download the generated file
-        // if($renderJob->status == 'done' && !is_null($action) && $action == 'download' && file_exists($renderJob->output_path))
-        //     return response()->download($renderJob->output_path, pathinfo($renderJob->output_path, PATHINFO_BASENAME))->deleteFileAfterSend();
+        if($renderJob->status != 'done'){
+            // TODO: update render job on the db
+        }
 
         return response()->json(['data' => $renderJob]);
-    }
-
-    /**
-     * Copy file to the local disk
-     *
-     * @param string $path
-     * @return string|null
-     */
-    private function copyFileToPublicDisk(string $path, string $directory = null, string $uniqueID = null) : ?string
-    {
-        if(!is_null($path)){
-            $fileExtension = pathinfo($path, PATHINFO_EXTENSION);
-            $demoFileName = pathinfo($path, PATHINFO_FILENAME) . '.' . $fileExtension;
-            $tempFile = tempnam(sys_get_temp_dir(), $demoFileName);
-
-            // Copy from online ressource
-            if(filter_var($path, FILTER_VALIDATE_URL))
-                copy($path, $tempFile);
-            // TODO: handle the uploaded preview
-
-            // Save file to local disk
-            if(!is_null($directory) && !is_null($uniqueID)){
-                $targetDirectory = $directory . DIRECTORY_SEPARATOR . $uniqueID . DIRECTORY_SEPARATOR;
-                Storage::disk('public')->put($targetDirectory . strtolower($demoFileName), file_get_contents($tempFile));
-            }
-
-            return strtolower($demoFileName);
-        }
-
-        // If not success return a null path
-        return null;
-    }
-
-    /**
-     * Clear dies render jobs
-     *
-     * @return void
-     */
-    private function ClearDieRenderJobs() : void
-    {
-        // Fetch only created jobs without running
-        $renderJobs = RenderJob::where('status', RenderJob::DEFAULT_STATUS)->get();
-
-        foreach($renderJobs as $renderJob){
-            // Creating time plus thirty minutes
-            $plusThirtyMinutes = strtotime('+30 minutes', strtotime($renderJob->createdAt));
-            // Remove the older jobs
-            if($plusThirtyMinutes < date('Y-m-d H:i:s') || is_null($renderJob->created_at))
-                $renderJob->delete();
-        }
     }
 }
