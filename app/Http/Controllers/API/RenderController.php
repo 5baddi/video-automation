@@ -13,6 +13,7 @@ use App\Http\Controllers\Controller;
 use GuzzleHttp\Client as GuzzleClient;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Controllers\API\CronController;
 use GuzzleHttp\Exception\BadResponseException;
 
 class RenderController extends Controller
@@ -131,36 +132,36 @@ class RenderController extends Controller
                 // Content of response
                 $content = json_decode($response->getBody()->getContents(), true);
 
-                if(is_null($renderJob->vau_job_id)){
-                    // Add generated render job info
+                // Set the VAU API render job id
+                if(is_null($renderJob->vau_job_id))
                     $renderJob->vau_job_id = $content['id'];
-                    $renderJob->status = $content['renderStatus']['state'];
-                    $renderJob->message = $content['renderStatus']['message'];
-                    $renderJob->output_name = strtolower(str_replace(' ', '_', $fileName));
-                    $renderJob->progress = $content['renderStatus']['progressPercent'];
-                    $renderJob->left_seconds = $content['renderStatus']['etlSec'];
-                    $renderJob->created_at = date('Y-m-d H:i:s', strtotime($content['created']));
-                    $renderJob->finished_at = date('Y-m-d H:i:s');
-                    $renderJob->finished_at = isset($content['finished']) ? date('Y-m-d H:i:s', strtotime($content['finished'])) : null;
-                    
-                    $renderJob->update();
-                }else{
-                    // Update render job info
-                    $renderJob->status = $content['renderStatus']['state'];
-                    $renderJob->message = $content['renderStatus']['message'];
-                    $renderJob->output_name = strtolower(str_replace(' ', '_', $fileName));
-                    $renderJob->progress = $content['renderStatus']['progressPercent'];
-                    $renderJob->left_seconds = $content['renderStatus']['etlSec'];
-                    $renderJob->finished_at = date('Y-m-d H:i:s');
-                    $renderJob->finished_at = isset($content['finished']) ? date('Y-m-d H:i:s', strtotime($content['finished'])) : null;
-                    
-                    $renderJob->update();
-                }
 
-                return response()->json(['job_id' => $renderJob->id, 'message' => "The rendering job was successfully created. please wait until finished..."]);
+                // Update the render job infos
+                $renderJob->status = $content['renderStatus']['state'];
+                $renderJob->message = $content['renderStatus']['message'];
+                $renderJob->output_name = strtolower(str_replace(' ', '_', $fileName));
+                $renderJob->progress = $content['renderStatus']['progressPercent'];
+                $renderJob->left_seconds = $content['renderStatus']['etlSec'];
+                $renderJob->created_at = date('Y-m-d H:i:s', strtotime($content['created']));
+                $renderJob->finished_at = date('Y-m-d H:i:s');
+                $renderJob->finished_at = isset($content['finished']) ? date('Y-m-d H:i:s', strtotime($content['finished'])) : null;
+
+                
+                // Generate target output path
+                $targetOutputPath = AutomationApp::generateOutputURL($renderJob, $content['outputUrls']['mainFile']);
+                // Set the render job local output url
+                $renderJob->output_url = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $renderJob->template_id, 'fileName' => pathinfo($targetOutputPath, PATHINFO_BASENAME)]);
+
+                // Update render job
+                $renderJob->update();
+
+                return response()->json([
+                    'job_id'        => $renderJob->id, 
+                    'output_url'    => $renderJob->output_url,
+                    'message'       => "The rendering job was successfully created. please wait until finished..."
+                ]);
             }
         }catch(BadResponseException $ex){
-            die($ex->getMessage());
             switch($ex->getResponse()->getStatusCode()){
                 case 400:
                     return response()->json(['message' => "Please verify that the template entries are correct!"], 400);
@@ -174,5 +175,28 @@ class RenderController extends Controller
                 break;
             }
         }
+    }
+
+    /**
+     * Get status of render job
+     *
+     * @param int $renderID
+     * @param string $action
+     * @return JsonResponse|BinaryFileResponse
+     */
+    public function status(int $renderID)
+    {        
+        // Fetch if this render job exists
+        $renderJob = RenderJob::find($renderID);
+        if(is_null($renderJob))
+            return response()->json(['message' => "Job does not exists!"], 404);
+        elseif(is_null($renderJob->vau_job_id)) 
+            return response()->json(['message' => "Job requested not created yet!"], 400);
+
+        // Refresh the render job details
+        if($renderJob->status != 'done')
+            app(CronController::class)->notify($renderJob->id);
+
+        return response()->json(['data' => $renderJob]);
     }
 }

@@ -2,6 +2,9 @@
 
 namespace App;
 
+use App\RenderJob;
+use Illuminate\Support\Facades\Storage;
+
 class AutomationApp
 {
     const COMPANY_NAME = "V12 Software";
@@ -21,4 +24,34 @@ class AutomationApp
         'portrait'      => ['width' => 1280, 'height' => 2275.56],
         'square'        => ['width' => 1280, 'height' => 1280]
     ];
+
+    /**
+     * Generate the render job output URL
+     *
+     * @param RenderJob $renderJob
+     * @param string $onlineOutputURL
+     * @return string
+     */
+    public static function generateOutputURL(RenderJob $renderJob, string $onlineOutputURL) : string
+    {
+        // Init target path
+        $targetOutputURL = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $renderJob->template_id . DIRECTORY_SEPARATOR;
+                
+        // Update the output url
+        if(is_null($renderJob->output_url)){
+            // Generate the filename
+            $outputName = uniqid(date('dmY')) . '_' . pathinfo($onlineOutputURL, PATHINFO_BASENAME);
+            if(!is_null($renderJob->output_name))
+                $outputName = $renderJob->output_name . '_' . uniqid(date('dmY')) . '.' . pathinfo($onlineOutputURL, PATHINFO_EXTENSION);
+            
+            // Update target path
+            $targetOutputURL .= $outputName;
+            $targetOutputURL = Storage::disk('local')->path($targetOutputURL);
+        }else{
+            // Get the filename from the output url
+            $targetOutputURL .= pathinfo($renderJob->output_url, PATHINFO_BASENAME);
+        }
+
+        return $targetOutputURL;
+    }
 }

@@ -49,7 +49,7 @@ class Handler extends ExceptionHandler
     {
         // Handle the API errors pages as json response
         if($this->isHttpException($exception) && $request->is("api/*")){
-            $message = "";
+            $message = AutomationApp::INTERNAL_SERVER_ERROR;
 
             switch($exception->getStatusCode()){
                 case 400:

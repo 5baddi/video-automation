@@ -39,17 +39,16 @@ Route::group(['middleware' => ['api', 'cors'], 'namespace' => 'API', 'prefix' =>
     Route::put('/templates/medias/{mediaID}', 'VideoAutomationController@updateMedia')->where(['mediaID' => '[0-9]+']);
     // Delete an exists media for a custom template
     Route::delete('/templates/medias/{mediaID}', 'VideoAutomationController@deleteMedia')->where(['mediaID' => '[0-9]+']);
-    // Start a render job
-    Route::post('/render', 'VideoAutomationController@render');
-    // Get job progress
-    Route::get('/status/{renderID}', 'VideoAutomationController@status')->name('job.status');
-    // Notify after render job done
-    Route::get('/notify/{renderID}', 'CronController@notify')->where(['renderID' => '[0-9]+'])->name('cron.notify');
-    Route::post('/notify/{renderID}', 'CronController@vauNotify')->where(['renderID' => '[0-9]+'])->name('vau.notify');
 });
 
 // V2 routes
 Route::group(['middleware' => ['api', 'cors'], 'namespace' => 'API', 'prefix' => 'v2'], function () {
     // Start a render job
     Route::post('/render', 'RenderController@render');
+    // Get job progress
+    Route::get('/status/{renderID}', 'RenderController@status')->name('job.status');
+    // Notify after render job done by user
+    Route::get('/notify/{renderID}', 'CronController@notify')->where(['renderID' => '[0-9]+'])->name('cron.notify');
+    // Notify after render job done by VAU API callback
+    Route::post('/notify/{renderID}', 'CronController@vauNotify')->where(['renderID' => '[0-9]+'])->name('vau.notify');
 });

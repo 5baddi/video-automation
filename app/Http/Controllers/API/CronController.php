@@ -94,16 +94,21 @@ class CronController extends Controller
             $renderJob->message = $content['renderStatus']['message'];
             $renderJob->progress = $content['renderStatus']['progressPercent'];
             $renderJob->left_seconds = $content['renderStatus']['etlSec'];
-            $renderJob->finished_at = !isset($content['finished']) ? date('Y-m-d H:i:s', strtotime($content['finished'])) : null;
             
             // Save the generated video to the private local resources
             if($renderJob->status == 'done' && strpos($renderJob->message, "Output files uploaded to storage") !== false){
-                $outputName = uniqid() . '_' . pathinfo($content['outputUrls']['mainFile'], PATHINFO_BASENAME);
-                if(!is_null($renderJob->output_name))
-                    $outputName = $renderJob->output_name . '.' . pathinfo($content['outputUrls']['mainFile'], PATHINFO_EXTENSION);
-                $targetOutputPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $renderJob->template_id . DIRECTORY_SEPARATOR . $outputName;
-                Storage::disk('local')->copy($content['outputUrls']['mainFile'], $targetOutputPath);
-                $renderJob->output_url = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $renderJob->template_id, 'fileName' => $outputName]);
+                // Generate target output path
+                $targetOutputPath = AutomationApp::generateOutputURL($renderJob, $content['outputUrls']['mainFile']);
+                $targetOutputPath = Storage::disk('local')->path($targetOutputPath);
+
+                // Copy the online output to local
+                copy($content['outputUrls']['mainFile'], $targetOutputPath);
+                
+                // Set the output url
+                $renderJob->output_url = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $renderJob->template_id, 'fileName' => pathinfo($targetOutputPath, PATHINFO_BASENAME)]);
+
+                // Update finished at datetime
+                $renderJob->finished_at = isset($content['finished']) ? date('Y-m-d H:i:s', strtotime($content['finished'])) : date('Y-m-d H:i:s');
             }
 
             // Save the new values
