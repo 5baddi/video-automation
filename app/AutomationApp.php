@@ -26,18 +26,18 @@ class AutomationApp
     ];
 
     /**
-     * Generate the render job output URL
+     * Generate the render job output Path
      *
      * @param RenderJob $renderJob
      * @param string $onlineOutputURL
      * @return string
      */
-    public static function generateOutputURL(RenderJob $renderJob, string $onlineOutputURL) : string
+    public static function generateOutputPath(RenderJob $renderJob, string $onlineOutputURL) : string
     {
         // Init target path
-        $targetOutputURL = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $renderJob->template_id . DIRECTORY_SEPARATOR;
+        $onlineOutputPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $renderJob->template_id . DIRECTORY_SEPARATOR;
                 
-        // Update the output url
+        // Parse the output url
         if(is_null($renderJob->output_url)){
             // Generate the filename
             $outputName = uniqid(date('dmY')) . '_' . pathinfo($onlineOutputURL, PATHINFO_BASENAME);
@@ -45,13 +45,13 @@ class AutomationApp
                 $outputName = $renderJob->output_name . '_' . uniqid(date('dmY')) . '.' . pathinfo($onlineOutputURL, PATHINFO_EXTENSION);
             
             // Update target path
-            $targetOutputURL .= $outputName;
-            $targetOutputURL = Storage::disk('local')->path($targetOutputURL);
+            $onlineOutputPath .= $outputName;
+            $onlineOutputPath = Storage::disk('local')->path($onlineOutputPath);
         }else{
             // Get the filename from the output url
-            $targetOutputURL .= pathinfo($renderJob->output_url, PATHINFO_BASENAME);
+            $onlineOutputPath .= pathinfo($renderJob->output_url, PATHINFO_BASENAME);
         }
 
-        return $targetOutputURL;
+        return $onlineOutputPath;
     }
 }

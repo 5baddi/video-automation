@@ -148,7 +148,7 @@ class RenderController extends Controller
 
                 
                 // Generate target output path
-                $targetOutputPath = AutomationApp::generateOutputURL($renderJob, $content['outputUrls']['mainFile']);
+                $targetOutputPath = AutomationApp::generateOutputPath($renderJob, $content['outputUrls']['mainFile']);
                 // Set the render job local output url
                 $renderJob->output_url = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $renderJob->template_id, 'fileName' => pathinfo($targetOutputPath, PATHINFO_BASENAME)]);
 

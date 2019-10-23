@@ -98,7 +98,7 @@ class CronController extends Controller
             // Save the generated video to the private local resources
             if($renderJob->status == 'done' && strpos($renderJob->message, "Output files uploaded to storage") !== false){
                 // Generate target output path
-                $targetOutputPath = AutomationApp::generateOutputURL($renderJob, $content['outputUrls']['mainFile']);
+                $targetOutputPath = AutomationApp::generateOutputPath($renderJob, $content['outputUrls']['mainFile']);
                 $targetOutputPath = Storage::disk('local')->path($targetOutputPath);
 
                 // Copy the online output to local
