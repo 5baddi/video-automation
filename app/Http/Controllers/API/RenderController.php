@@ -64,29 +64,31 @@ class RenderController extends Controller
 
             // Upload the attached files
             try{
+                // dd($customTemplate->medias()->get());
                 // Handle the request media by template
-                foreach($customTemplateMedias->get() as $media){
-                    // Attached image
-                    if($request->hasFile($media->palceholder)){
-                        $fileName = strtolower($request->file($media->placeholder)->getClientOriginalName());
-                        $targetPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id;
-                        
-                        if(!Storage::disk('local')->exists($targetPath . DIRECTORY_SEPARATOR . $fileName))
-                            $request->file($media->placeholder)->storeAs($targetPath, $fileName, 'local');
-
-                        // Relative url
-                        $inputs[$media->placeholder] = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $media->template_id, 'fileName' => $fileName]);
-                    }
+                foreach($customTemplate->medias()->get() as $media){
                     // Ignore not images placeholder
-                    elseif($media->type != TemplateMedia::SCENE_TYPE){
+                    if($media->type != TemplateMedia::SCENE_TYPE){
                         if(isset($body[$media->placeholder]))
                             $inputs[$media->placeholder] = $body[$media->placeholder];
                         else
                             $inputs[$media->placeholder] = $media->default_value;
-                    }
-                    // It's image & not attached
-                    elseif(!$request->hasFile($media->palceholder)){
-                        $inputs[$media->placeholder] = $media->default_value;
+                    }else{
+                        // Attached image
+                        if($request->hasFile($media->palceholder)){
+                            $fileName = strtolower($request->file($media->placeholder)->getClientOriginalName());
+                            $targetPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id;
+                            
+                            if(!Storage::disk('local')->exists($targetPath . DIRECTORY_SEPARATOR . $fileName))
+                                $request->file($media->placeholder)->storeAs($targetPath, $fileName, 'local');
+
+                            // Relative url
+                            $inputs[$media->placeholder] = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $media->template_id, 'fileName' => $fileName]);
+                        }
+                        // It's image & not attached
+                        else{
+                            $inputs[$media->placeholder] = $media->default_value;
+                        }
                     }
                 }
             }catch(\Exception $ex){
