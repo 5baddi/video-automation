@@ -2,17 +2,14 @@
 
 namespace App\Http\Controllers\API;
 
-use App\RenderJob;
 use App\AutomationApp;
 use App\TemplateMedia;
 use App\CustomTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
-use GuzzleHttp\Client as GuzzleClient;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use GuzzleHttp\Exception\BadResponseException;
 
 class VideoAutomationController extends Controller
 {
@@ -87,13 +84,14 @@ class VideoAutomationController extends Controller
             'demo'          => 'nullable|mimetypes:video/mp4,video/avi,video/mpeg,video/quicktime',
             'thumbnail'     => 'nullable|mimes:jpg,jpeg,bmp,png,gif',
             'enabled'       =>  'nullable|in:0,1',
-            'medias'        =>  'required|min:1',
-            'medias.*.placeholder'  =>  'required|string',
-            'medias.*.type'         =>  'nullable|in:' . implode(',', TemplateMedia::ALLOWED_TYPES),
-            'medias.*.color'        =>  'nullable|string',
-            'medias.*.default_value'=>  'nullable|string',
-            'medias.*.preview_path' =>  'nullable|string',
-            'medias.*.position'     =>  'nullable|integer',
+            // 'medias'        =>  'required|array|min:1',
+            // 'scene.*'        =>  'required|integer|min:1',
+            // 'placeholder.*'  =>  'required|string|min:1',
+            // 'type.*'         =>  'nullable|in:' . implode(',', TemplateMedia::ALLOWED_TYPES),
+            // 'color.*'        =>  'nullable|string',
+            // 'default_value.*'=>  'nullable|string',
+            // // 'medias.*.preview_path' =>  'nullable|string',
+            // 'position.*'     =>  'nullable|integer',
             // 'updated_at'    =>  'datetime:Y-m-d H:i:s',
             // 'created_at'    =>  'datetime:Y-m-d H:i:s',
         ];
@@ -150,52 +148,57 @@ class VideoAutomationController extends Controller
         }
 
         // Adjust the template medias
-        foreach($data['medias'] as $key => $media){
-            $templateMedia = new TemplateMedia();
-            $templateMedia->template_id = $customTemplate->id;
-            $templateMedia->placeholder = str_replace(' ', '_', $media['placeholder']);
-            $templateMedia->type = isset($media['type']) ? $media['type'] : TemplateMedia::SCENE_TYPE;
-            $templateMedia->position = (!isset($media['position'])) ? $key + 1 : $media['position'];
+        // foreach($data['medias'] as $key => $media){
+        //     $templateMedia = new TemplateMedia();
+        //     $templateMedia->template_id = $customTemplate->id;
+        //     $templateMedia->placeholder = str_replace(' ', '_', $media['placeholder']);
+        //     $templateMedia->type = isset($media['type']) ? $media['type'] : TemplateMedia::SCENE_TYPE;
+        //     $templateMedia->position = (!isset($media['position'])) ? $key + 1 : $media['position'];
 
-            if(isset($media['default_value']) && isset($media['type']) && $media['type'] != TemplateMedia::SCENE_TYPE){
-                $templateMedia->default_value = $media['default_value'];
-            }
-            // Copy the remote default value to local
-            elseif(filter_var($templateMedia->default_value, FILTER_VALIDATE_URL)){
-                $fileName = strtolower(str_replace(' ', '_', pathinfo($templateMedia->default_value, PATHINFO_BASENAME)));
-                $temp = tempnam(sys_get_temp_dir(), $fileName);
-                $directory = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . 'defaults';
+        //     if(isset($media['default_value']) && isset($media['type']) && $media['type'] != TemplateMedia::SCENE_TYPE){
+        //         $templateMedia->default_value = $media['default_value'];
+        //     }
+        //     // Copy the remote default value to local
+        //     elseif(filter_var($templateMedia->default_value, FILTER_VALIDATE_URL)){
+        //         $fileName = strtolower(str_replace(' ', '_', pathinfo($templateMedia->default_value, PATHINFO_BASENAME)));
+        //         $temp = tempnam(sys_get_temp_dir(), $fileName);
+        //         $directory = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . 'defaults';
 
-                // Check if file exists
-                $path = $directory . DIRECTORY_SEPARATOR . $fileName;
-                $fullPath = Storage::disk('public')->path($path);
-                if(!Storage::disk('public')->exists($path))
-                    copy($temp, $fullPath);
+        //         // Check if file exists
+        //         $path = $directory . DIRECTORY_SEPARATOR . $fileName;
+        //         $fullPath = Storage::disk('public')->path($path);
+        //         if(!Storage::disk('public')->exists($path))
+        //             copy($temp, $fullPath);
 
-                // Set the default value url
-                $templateMedia->default_value = route('cdn.cutomTemplate.files', ['collection' =>  'defaults', 'customTemplateID' => $customTemplate->id, 'fileName' => $fileName]);
-            }
+        //         // Set the default value url
+        //         $templateMedia->default_value = route('cdn.cutomTemplate.files', ['collection' =>  'defaults', 'customTemplateID' => $customTemplate->id, 'fileName' => $fileName]);
+        //     }
 
-            // Upload media preview
-            if($request->hasFile('media' . $key) && $templateMedia->type == TemplateMedia::SCENE_TYPE){
-                try{
-                    // Parse the target path and file names
-                    $targetTemplatePath = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . 'medias';
-                    $mediaFileName = $key . '.' . $request->file('media' . $key)->getClientOriginalExtension();
+        //     // Upload media preview
+        //     if($request->hasFile('media' . $key) && $templateMedia->type == TemplateMedia::SCENE_TYPE){
+        //         try{
+        //             // Parse the target path and file names
+        //             $targetTemplatePath = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . 'medias';
+        //             $mediaFileName = $key . '.' . $request->file('media' . $key)->getClientOriginalExtension();
                     
-                    // Upload the demo video
-                    $request->file('media' . $key)->storeAs($targetTemplatePath, $mediaFileName, 'public');
-                    $templateMedia->preview_url = route('cdn.cutomTemplate.files', ['collection' =>  'medias', 'customTemplateID' => $customTemplate->id, 'fileName' => $mediaFileName]);
-                }catch(\Exception $ex){
-                    throw new \Exception("Media preview are not allowed or damaged!");
-                }
-            }
+        //             // Upload the demo video
+        //             $request->file('media' . $key)->storeAs($targetTemplatePath, $mediaFileName, 'public');
+        //             $templateMedia->preview_url = route('cdn.cutomTemplate.files', ['collection' =>  'medias', 'customTemplateID' => $customTemplate->id, 'fileName' => $mediaFileName]);
+        //         }catch(\Exception $ex){
+        //             throw new \Exception("Media preview are not allowed or damaged!");
+        //         }
+        //     }
 
-            $customTemplate->medias()->save($templateMedia);
-        }
+        //     $customTemplate->medias()->save($templateMedia);
+        // }
 
         // Return the inserted template id
-        return response()->json(['template_id' => $customTemplate->id, 'message' => "The template '" . $data['name'] . "' has been added successfully."]);
+        return response()->json([
+            'template_id' => $customTemplate->id, 
+            'demo'        => $customTemplate->preview_url,
+            'thumbnail'   => $customTemplate->thumbnail_url,
+            'message' => "The template '" . $data['name'] . "' has been added successfully."
+        ]);
     }
     
     /**
@@ -219,14 +222,14 @@ class VideoAutomationController extends Controller
             'version'       =>  'nullable',
             'preview_path'  =>  'nullable|string',
             'enabled'       =>  'nullable|in:0,1',
-            'medias'        =>  'nullable',
-            'medias.*.id'           =>  'nullable|integer',
-            'medias.*.placeholder'  =>  'required|string',
-            'medias.*.type'         =>  'nullable|in:' . implode(',', TemplateMedia::ALLOWED_TYPES),
-            'medias.*.color'        =>  'nullable|string',
-            'medias.*.default_value'=>  'nullable|string',
-            'medias.*.preview_path' =>  'nullable|string',
-            'medias.*.position'     =>  'nullable|integer',
+            // 'medias'        =>  'nullable',
+            // 'medias.*.id'           =>  'nullable|integer',
+            // 'medias.*.placeholder'  =>  'required|string',
+            // 'medias.*.type'         =>  'nullable|in:' . implode(',', TemplateMedia::ALLOWED_TYPES),
+            // 'medias.*.color'        =>  'nullable|string',
+            // 'medias.*.default_value'=>  'nullable|string',
+            // 'medias.*.preview_path' =>  'nullable|string',
+            // 'medias.*.position'     =>  'nullable|integer',
             // 'updated_at'    =>  'datetime:Y-m-d H:i:s',
             // 'created_at'    =>  'datetime:Y-m-d H:i:s',
         ];
@@ -262,46 +265,46 @@ class VideoAutomationController extends Controller
         $customTemplate->update();
 
         // Adjust the template medias
-        foreach($data['medias'] as $key => $media){
-            // Init template media obj
-            $templateMedia = new TemplateMedia();
+        // foreach($data['medias'] as $key => $media){
+        //     // Init template media obj
+        //     $templateMedia = new TemplateMedia();
 
-            // Retrieve the template media obj if already exists
-            if(isset($media['id'])){
-                $existsMedia = TemplateMedia::find($media['id']);
+        //     // Retrieve the template media obj if already exists
+        //     if(isset($media['id'])){
+        //         $existsMedia = TemplateMedia::find($media['id']);
 
-                if(!is_null($existsMedia))
-                    $templateMedia = $existsMedia;
-            }
+        //         if(!is_null($existsMedia))
+        //             $templateMedia = $existsMedia;
+        //     }
 
-            $templateMedia->template_id = $customTemplate->id;
-            $templateMedia->placeholder = str_replace(' ', '_', $media['placeholder']);
-            $templateMedia->type = isset($media['type']) ? $media['type'] : TemplateMedia::SCENE_TYPE;
-            if(isset($media['default_value']) && isset($media['type']) && $media['type'] != TemplateMedia::SCENE_TYPE)
-                $templateMedia->default_value = $media['default_value'];
-            if(isset($media['position']))
-                $customTemplate->position = $media['position'];
+        //     $templateMedia->template_id = $customTemplate->id;
+        //     $templateMedia->placeholder = str_replace(' ', '_', $media['placeholder']);
+        //     $templateMedia->type = isset($media['type']) ? $media['type'] : TemplateMedia::SCENE_TYPE;
+        //     if(isset($media['default_value']) && isset($media['type']) && $media['type'] != TemplateMedia::SCENE_TYPE)
+        //         $templateMedia->default_value = $media['default_value'];
+        //     if(isset($media['position']))
+        //         $customTemplate->position = $media['position'];
 
-            // Copy the media preview
-            // if(isset($media['preview_path'])){
-            //     $mediaDirectory = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . 'medias' . DIRECTORY_SEPARATOR;
-            //     $templateMedia->preview_path = $this->copyFileToPublicDisk($media['preview_path'], $mediaDirectory);
-            // }
+        //     // Copy the media preview
+        //     // if(isset($media['preview_path'])){
+        //     //     $mediaDirectory = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . 'medias' . DIRECTORY_SEPARATOR;
+        //     //     $templateMedia->preview_path = $this->copyFileToPublicDisk($media['preview_path'], $mediaDirectory);
+        //     // }
 
-            // TODO: Upload files to resources
+        //     // TODO: Upload files to resources
 
-            // Add as a new media
-            if(!isset($media['id'])){
-                $customTemplate->medias()->save($templateMedia);
-            }
-            // Update an exists template media
-            elseif(isset($existsMedia->id)){
-                $templateMedia->updated_at = date('Y-m-d H:i:s');
+        //     // Add as a new media
+        //     if(!isset($media['id'])){
+        //         $customTemplate->medias()->save($templateMedia);
+        //     }
+        //     // Update an exists template media
+        //     elseif(isset($existsMedia->id)){
+        //         $templateMedia->updated_at = date('Y-m-d H:i:s');
 
-                $templateMedia->update();
-            }
+        //         $templateMedia->update();
+        //     }
                 
-        }
+        // }
 
         // Return the inserted template id
         return response()->json(['template_id' => $customTemplate->id, 'message' => "The template '" . $data['name'] . "' has been updated successfully."]);

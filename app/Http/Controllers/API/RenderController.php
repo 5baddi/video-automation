@@ -83,8 +83,6 @@ class RenderController extends Controller
                             $inputs[$media->placeholder] = $body[$media->placeholder];
                         else
                             $inputs[$media->placeholder] = $media->default_value;
- 
-                        continue;
                     }
                     // It's image & not attached
                     elseif(!$request->hasFile($media->palceholder)){
@@ -157,6 +155,7 @@ class RenderController extends Controller
 
                 return response()->json([
                     'job_id'        => $renderJob->id, 
+                    'output_name'   => $renderJob->output_name,
                     'output_url'    => $renderJob->output_url,
                     'message'       => "The rendering job was successfully created. please wait until finished..."
                 ]);

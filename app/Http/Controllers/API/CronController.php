@@ -7,6 +7,7 @@ use App\AutomationApp;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use GuzzleHttp\Client as GuzzleClient;
 use Illuminate\Support\Facades\Storage;
 
 class CronController extends Controller
