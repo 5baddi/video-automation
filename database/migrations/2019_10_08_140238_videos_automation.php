@@ -23,6 +23,7 @@ class VideosAutomation extends Migration
             $table->string('rotation')->default('square');
             $table->string('preview_url')->nullable();
             $table->string('thumbnail_url')->nullable();
+            $table->string('gif_url')->nullable();
             $table->smallInteger('enabled')->default(1);
             $table->timestamps();
         });

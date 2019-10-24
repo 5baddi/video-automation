@@ -26,7 +26,8 @@ class CustomTemplate extends Model
         'version',
         'rotation',
         'preview_url',
-        'thumbnail_url'
+        'thumbnail_url',
+        'gif_url'
     ];
 
     /**

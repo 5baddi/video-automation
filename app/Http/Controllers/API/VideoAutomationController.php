@@ -39,7 +39,10 @@ class VideoAutomationController extends Controller
     public function templatesThumbnails(string $rotation = "square") : JsonResponse
     {
         // Retrieve all custom templates
-        $customTemplates = CustomTemplate::where('rotation', $rotation)->get();
+        $customTemplates = CustomTemplate::withCount('medias')
+            ->where(['rotation' => $rotation, 'enabled' => 1])
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         if($customTemplates->count() > 0)
             return response()->json(['data' => $customTemplates]);
