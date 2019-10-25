@@ -40,7 +40,8 @@ class VideoAutomationController extends Controller
     {
         // Retrieve all custom templates
         $customTemplates = CustomTemplate::withCount('medias')
-            ->where(['rotation' => $rotation, 'enabled' => 1])
+            // ->where(['rotation' => $rotation, 'enabled' => 1])
+            ->where(['rotation' => $rotation])
             ->orderBy('created_at', 'desc')
             ->get();
 
