@@ -11,6 +11,10 @@
 |
 */
 
+Route::any('/', function () {
+    dd("eee");
+});
+
 // Redirect to the Vue App
 // Route::permanentRedirect ('/', '/app');
 Route::permanentRedirect ('/', '/api');

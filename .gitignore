@@ -11,3 +11,5 @@ yarn-error.log
 /.git/*
 /.vscode/*
 /.env
+/node_modules/*
+/resources/js/*

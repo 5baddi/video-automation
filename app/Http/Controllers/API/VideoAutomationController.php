@@ -130,19 +130,26 @@ class VideoAutomationController extends Controller
             try{
                 // Parse the target path and file names
                 $targetTemplatePath = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id;
-                $demoFileName = strtolower(str_replace(' ', '_', $customTemplate->name)) . '.' . $request->file('demo')->getClientOriginalExtension();
-                $thumbnailFileName = strtolower(str_replace(' ', '_', $customTemplate->name)) . '.' . $request->file('thumbnail')->getClientOriginalExtension();
                 
                 // Upload the demo video
                 if($request->hasFile('demo')){
+                    $demoFileName = strtolower(str_replace(' ', '_', $customTemplate->name)) . '.' . $request->file('demo')->getClientOriginalExtension();
                     $request->file('demo')->storeAs($targetTemplatePath, $demoFileName, 'public');
                     $customTemplate->preview_url = route('cdn.cutomTemplate.files', ['collection' =>  'demos', 'customTemplateID' => $customTemplate->id, 'fileName' => $demoFileName]);
                 }
                 
                 // Upload the thumbnail
                 if($request->hasFile('thumbnail')){
+                    $thumbnailFileName = strtolower(str_replace(' ', '_', $customTemplate->name)) . '.' . $request->file('thumbnail')->getClientOriginalExtension();
                     $customTemplate->thumbnail_url = route('cdn.cutomTemplate.files', ['collection' =>  'thumbnails', 'customTemplateID' => $customTemplate->id, 'fileName' => $thumbnailFileName]);
                     $request->file('thumbnail')->storeAs($targetTemplatePath, $thumbnailFileName, 'public');
+                }
+                
+                // Upload the gif
+                if($request->hasFile('gif')){
+                    $gifFileName = strtolower(str_replace(' ', '_', $customTemplate->name)) . '.' . $request->file('gif')->getClientOriginalExtension();
+                    $customTemplate->gif_url = route('cdn.cutomTemplate.files', ['collection' =>  'thumbnails', 'customTemplateID' => $customTemplate->id, 'fileName' => $gifFileName]);
+                    $request->file('gif')->storeAs($targetTemplatePath, $gifFileName, 'public');
                 }
     
                 $customTemplate->update();
