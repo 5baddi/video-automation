@@ -11,10 +11,6 @@
 |
 */
 
-Route::any('/', function () {
-    dd("eee");
-});
-
 // Redirect to the Vue App
 // Route::permanentRedirect ('/', '/app');
 Route::permanentRedirect ('/', '/api');
@@ -27,7 +23,7 @@ Route::permanentRedirect ('/', '/api');
 // CDN routes
 Route::group(['middleware' => 'cors', 'prefix' => 'cdn'], function () {
     // Download generated video
-    Route::get('/download/{createdAt}/{fileName}', 'CDNController@downloadOutputVideo')->where(['createdAt' => '[0-9]+'])->name('cdn.download');
+    Route::get('/download/{customTemplateID}/{fileName}', 'CDNController@downloadOutputVideo')->where(['customTemplateID' => '[0-9]+'])->name('cdn.download');
     // Retrieve the custom template thumbnail
     // Route::get('/thumbnails/{customTemplateID}/{fileName}/{width?}/{height?}', 'CDNController@retrieveCustomTemplateThumbnail')->where(['customTemplateID' => '[0-9]+', 'width' => '[0-9]+', 'height' => '[0-9]+'])->name('cdn.thumbnail');
     // Retrieve the custom template demo video

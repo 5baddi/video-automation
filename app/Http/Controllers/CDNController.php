@@ -14,18 +14,23 @@ class CDNController extends Controller
     /**
      * Download the generated video
      *
-     * @param int $createdAt
+     * @param int $customTemplateID
      * @param string $fileName
      * @return Response
      */
-    public function downloadOutputVideo(int $createdAt, string $fileName)
+    public function downloadOutputVideo(int $customTemplateID, string $fileName)
     {
+        // Check if the custom template is already exists
+        $customTemplate = CustomTemplate::find($customTemplateID);
+        if(is_null($customTemplate))
+            abort(404);
+
         // Check if already exists on the public disk
-        $outputPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $createdAt . DIRECTORY_SEPARATOR . strtolower($fileName);
+        $outputPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . strtolower($fileName);
         $exists = Storage::disk('local')->exists($outputPath);
         if(!$exists)
-            return response()->json(['message' => "The requested file does not exists!"], 404);
-        
+            abort(404);
+
         // Force downloading the file
         return Storage::download($outputPath, strtolower($fileName));
     }
@@ -54,7 +59,7 @@ class CDNController extends Controller
         // Resize the thumbnail
         if(!is_null($width) && !is_null($height)){
             $resizedThumbPath = $this->resizeImage($thumbnailPath, $width, $height);
-            
+
             if(!is_null($resizedThumbPath))
                 return response()->redirectToRoute('cdn.thumbnail', ['customTemplateID' => $customTemplateID, 'fileName' => $fileName]);
         }
@@ -67,7 +72,7 @@ class CDNController extends Controller
         // Show the thumbnail image
         return response($thumbnail)->header('Content-Type', $thumbnailSize['mime']);
     }
-    
+
     /**
      * Retrieve the custom template demo video
      *
