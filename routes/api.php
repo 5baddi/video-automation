@@ -46,7 +46,7 @@ Route::group(['middleware' => ['api', 'cors'], 'namespace' => 'API', 'prefix' =>
     // Start a render job
     Route::post('/render', 'RenderController@render');
     // Get list of rendered jobs
-    Route::post('/render/videos', 'RenderController@index');
+    Route::get('/render/videos', 'RenderController@index');
     // Get job progress
     Route::get('/status/{renderID}', 'RenderController@status')->name('job.status');
     // Notify after render job done by user
