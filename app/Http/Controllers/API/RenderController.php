@@ -19,6 +19,21 @@ use GuzzleHttp\Exception\BadResponseException;
 class RenderController extends Controller
 {
     /**
+     * Get rendered jobs list
+     *
+     * @return JsonResponse
+     */
+    public function index() : JsonResponse
+    {
+        $renderedJobs = RenderJob::all();
+        if(sizof($renderedJobs) > 0)
+            return response()->json(['data' => $renderedJobs], 200);
+
+        // No content
+        return response()->json(null, 204);
+    }
+
+    /**
      * Exec render job
      *
      * @param Request $request
