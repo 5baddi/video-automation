@@ -33,6 +33,30 @@ class RenderController extends Controller
         return response()->json(null, 204);
     }
 
+
+    /**
+     * Delete an exists render job
+     *
+     * @param integer $renderJobID
+     * @return JsonResponse
+     */
+    public function delete(int $renderJobID) : JsonResponse
+    {
+        // Get the exists render job
+        $renderJob = RenderJob::find($renderJobID);
+        if(is_null($renderJob))
+            return response()->json(['message' => "Video render job doesn't exists!"], 404);
+
+        // Delete the render job also the outputs
+        $renderJob->delete();
+        Storage::deleteDirectory(AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $renderJob->template_id . DIRECTORY_SEPARATOR);
+        // TODO: handle video output files
+        // Delete outputs directory for this render job
+        // $renderJobFiles = Storage::files(AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $renderJob->template_id . DIRECTORY_SEPARATOR);
+
+        return response()->json(['message' => "The video render job has deleted successfully."], 200);
+    }
+
     /**
      * Exec render job
      *
@@ -79,7 +103,9 @@ class RenderController extends Controller
 
             // Upload the attached files
             try{
-                // dd($customTemplate->medias()->get());
+                // Render job unique name id
+                $uniqueID = uniqid(date('dmy')) . '_';
+
                 // Handle the request media by template
                 foreach($customTemplate->medias()->get() as $media){
                     // Ignore not images placeholder
@@ -91,7 +117,7 @@ class RenderController extends Controller
                     }else{
                         // Attached image
                         if($request->hasFile($media->palceholder)){
-                            $fileName = strtolower($request->file($media->placeholder)->getClientOriginalName());
+                            $fileName = $uniqueID . strtolower($request->file($media->placeholder)->getClientOriginalName());
                             $targetPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id;
                             
                             if(!Storage::disk('local')->exists($targetPath . DIRECTORY_SEPARATOR . $fileName))
@@ -111,7 +137,7 @@ class RenderController extends Controller
             }
 
             // File name
-            $fileName = isset($body['name']) ? $body['name'] : uniqid() . '_' . strtolower(str_replace(' ', '_', $customTemplate->name));
+            $videoTitle = isset($body['name']) ? $body['name'] : strtolower(str_replace(' ', '_', $customTemplate->name));
 
             // Prepare the callback/notification url
             $renderJob->template_id = $customTemplate->id;
@@ -126,7 +152,7 @@ class RenderController extends Controller
             // $videoData['template'] = $body['template'];
             $videoData['template']['id'] = $customTemplate->vau_id;
             $videoData['input'] = $inputs;
-            $videoData['name'] = $fileName;
+            $videoData['name'] = $videoTitle;
             $videoData['notificationUrl'] = route('vau.notify', ['jobID' => $renderJob->id]);
 
             // Init Guzzle client
@@ -154,7 +180,7 @@ class RenderController extends Controller
                 // Update the render job infos
                 $renderJob->status = $content['renderStatus']['state'];
                 $renderJob->message = $content['renderStatus']['message'];
-                $renderJob->output_name = strtolower(str_replace(' ', '_', $fileName));
+                $renderJob->output_name = strtolower(str_replace(' ', '_', $videoTitle));
                 $renderJob->progress = $content['renderStatus']['progressPercent'];
                 $renderJob->left_seconds = $content['renderStatus']['etlSec'];
                 $renderJob->created_at = date('Y-m-d H:i:s', strtotime($content['created']));

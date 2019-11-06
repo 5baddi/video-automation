@@ -6,6 +6,7 @@ use App\RenderJob;
 use App\AutomationApp;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use wapmorgan\MediaFile\MediaFile;
 use App\Http\Controllers\Controller;
 use GuzzleHttp\Client as GuzzleClient;
 use Illuminate\Support\Facades\Storage;
@@ -95,6 +96,15 @@ class CronController extends Controller
             $renderJob->message = $content['renderStatus']['message'];
             $renderJob->progress = $content['renderStatus']['progressPercent'];
             $renderJob->left_seconds = $content['renderStatus']['etlSec'];
+
+            $media = MediaFile::open($content['outputUrls']['mainFile']);
+            $videoInfo = $media->getVideo();
+            print_r($videoInfo);
+
+            die();
+
+            // Set the video duration
+            $renderJob->video_duration = $content['renderStatus']['etlSec'];
             
             // Save the generated video to the private local resources
             if($renderJob->status == 'done' && strpos($renderJob->message, "Output files uploaded to storage") !== false){
