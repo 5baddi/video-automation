@@ -119,7 +119,7 @@ class RenderController extends Controller
                         if($request->hasFile($media->palceholder)){
                             $fileName = $uniqueID . strtolower($request->file($media->placeholder)->getClientOriginalName());
                             $targetPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id;
-                            
+
                             if(!Storage::disk('local')->exists($targetPath . DIRECTORY_SEPARATOR . $fileName))
                                 $request->file($media->placeholder)->storeAs($targetPath, $fileName, 'local');
 
@@ -138,6 +138,10 @@ class RenderController extends Controller
 
             // File name
             $videoTitle = isset($body['name']) ? $body['name'] : strtolower(str_replace(' ', '_', $customTemplate->name));
+
+            // Set user ID
+            if(isset($body['user']))
+                $renderJob->user_id = $body['user'];
 
             // Prepare the callback/notification url
             $renderJob->template_id = $customTemplate->id;
@@ -187,7 +191,7 @@ class RenderController extends Controller
                 $renderJob->finished_at = date('Y-m-d H:i:s');
                 $renderJob->finished_at = isset($content['finished']) ? date('Y-m-d H:i:s', strtotime($content['finished'])) : null;
 
-                
+
                 // Generate target output path
                 $targetOutputPath = AutomationApp::generateOutputPath($renderJob, $content['outputUrls']['mainFile']);
                 // Set the render job local output url
@@ -197,7 +201,7 @@ class RenderController extends Controller
                 $renderJob->update();
 
                 return response()->json([
-                    'job_id'        => $renderJob->id, 
+                    'job_id'        => $renderJob->id,
                     'output_name'   => $renderJob->output_name,
                     'output_url'    => $renderJob->output_url,
                     'message'       => "The rendering job was successfully created. please wait until finished..."
@@ -227,12 +231,12 @@ class RenderController extends Controller
      * @return JsonResponse|BinaryFileResponse
      */
     public function status(int $renderID)
-    {        
+    {
         // Fetch if this render job exists
         $renderJob = RenderJob::find($renderID);
         if(is_null($renderJob))
             return response()->json(['message' => "Job does not exists!"], 404);
-        elseif(is_null($renderJob->vau_job_id)) 
+        elseif(is_null($renderJob->vau_job_id))
             return response()->json(['message' => "Job requested not created yet!"], 400);
 
         // Refresh the render job details

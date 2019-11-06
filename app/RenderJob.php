@@ -36,6 +36,7 @@ class RenderJob extends Model
     protected $casts = [
         'template_id'   => 'integer',
         'vau_job_id'    => 'integer',
+        'user_id'       => 'integer',
         'progress'      => 'integer',
         'left_seconds'  => 'integer',
         'finished_at'   => 'datetime',

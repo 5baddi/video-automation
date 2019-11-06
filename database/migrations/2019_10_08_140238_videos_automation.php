@@ -48,6 +48,7 @@ class VideosAutomation extends Migration
             $table->bigIncrements('id');
             $table->unsignedBigInteger('template_id');
             $table->unsignedBigInteger('vau_job_id')->unique()->nullable();
+            $table->unsignedBigInteger('user_id')->nullable();
             $table->string('status')->default('queued');
             $table->string('message')->default(null);
             $table->string('output_name')->default(null);
