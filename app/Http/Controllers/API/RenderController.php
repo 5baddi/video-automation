@@ -136,6 +136,8 @@ class RenderController extends Controller
                 return response()->json(['message' => 'Attached images are not allowed or damaged!'], 400);
             }
 
+            // TODO: Store the video layouts provided by the user
+
             // File name
             $videoTitle = isset($body['name']) ? $body['name'] : strtolower(str_replace(' ', '_', $customTemplate->name));
 
