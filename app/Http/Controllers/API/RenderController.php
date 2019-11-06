@@ -25,7 +25,7 @@ class RenderController extends Controller
      */
     public function index() : JsonResponse
     {
-        $renderedJobs = RenderJob::all();
+        $renderedJobs = RenderJob::orderBy('created_at', 'desc')->get();
         if(sizeof($renderedJobs) > 0)
             return response()->json(['data' => $renderedJobs], 200);
 
