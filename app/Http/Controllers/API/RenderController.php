@@ -14,6 +14,7 @@ use GuzzleHttp\Client as GuzzleClient;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\API\CronController;
+use App\RenderJobMedia;
 use GuzzleHttp\Exception\BadResponseException;
 
 class RenderController extends Controller
@@ -50,9 +51,7 @@ class RenderController extends Controller
         // Delete the render job also the outputs
         $renderJob->delete();
         Storage::deleteDirectory(AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $renderJob->template_id . DIRECTORY_SEPARATOR);
-        // TODO: handle video output files
-        // Delete outputs directory for this render job
-        // $renderJobFiles = Storage::files(AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $renderJob->template_id . DIRECTORY_SEPARATOR);
+        // TODO: delete video output assets from the render job medias history
 
         return response()->json(['message' => "The video render job has deleted successfully."], 200);
     }
@@ -101,6 +100,21 @@ class RenderController extends Controller
             // Init inputs
             $inputs = [];
 
+            // File name
+            $videoTitle = isset($body['name']) ? $body['name'] : strtolower(str_replace(' ', '_', $customTemplate->name));
+
+            // Set user ID
+            if(isset($body['user']))
+                $renderJob->user_id = $body['user'];
+
+            // Prepare the callback/notification url
+            $renderJob->template_id = $customTemplate->id;
+            $renderJob->status = RenderJob::DEFAULT_STATUS;
+            $renderJob->created_at = date('Y-m-d H:i:s');
+            $renderJob->updated_at = null;
+            $renderJob->finished_at = null;
+            $renderJob->save();
+
             // Upload the attached files
             try{
                 // Render job unique name id
@@ -131,27 +145,18 @@ class RenderController extends Controller
                             $inputs[$media->placeholder] = $media->default_value;
                         }
                     }
+
+                    // Store media to render job history
+                    $renderJobMedia = new RenderJobMedia();
+                    $renderJobMedia->media_id = $media->id;
+                    $renderJobMedia->value = $inputs[$media->placeholder];
+
+                    // Add render job medias history
+                    $renderJob->mediasHistory()->save($renderJobMedia);
                 }
             }catch(\Exception $ex){
                 return response()->json(['message' => 'Attached images are not allowed or damaged!'], 400);
             }
-
-            // TODO: Store the video layouts provided by the user
-
-            // File name
-            $videoTitle = isset($body['name']) ? $body['name'] : strtolower(str_replace(' ', '_', $customTemplate->name));
-
-            // Set user ID
-            if(isset($body['user']))
-                $renderJob->user_id = $body['user'];
-
-            // Prepare the callback/notification url
-            $renderJob->template_id = $customTemplate->id;
-            $renderJob->status = RenderJob::DEFAULT_STATUS;
-            $renderJob->created_at = date('Y-m-d H:i:s');
-            $renderJob->updated_at = null;
-            $renderJob->finished_at = null;
-            $renderJob->save();
 
             // Re-form the body
             $videoData = [];
