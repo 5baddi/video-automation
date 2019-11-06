@@ -38,7 +38,6 @@ class RenderJob extends Model
         'vau_job_id'    => 'integer',
         'progress'      => 'integer',
         'left_seconds'  => 'integer',
-        'video_duration'=> 'integer',
         'finished_at'   => 'datetime',
     ];
 

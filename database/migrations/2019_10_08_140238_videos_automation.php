@@ -54,7 +54,6 @@ class VideosAutomation extends Migration
             $table->string('output_url')->default(null);
             $table->integer('progress')->default(0);
             $table->integer('left_seconds')->default(0);
-            $table->integer('video_duration')->nullable();
             $table->foreign('template_id')->references('id')->on('custom_templates');
             $table->timestamps();
             $table->timestamp('finished_at')->nullable();
