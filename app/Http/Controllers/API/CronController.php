@@ -97,9 +97,6 @@ class CronController extends Controller
             $renderJob->progress = $content['renderStatus']['progressPercent'];
             $renderJob->left_seconds = $content['renderStatus']['etlSec'];
 
-            // Set the video duration
-            $renderJob->video_duration = $content['renderStatus']['etlSec'];
-
             // Save the generated video to the private local resources
             if($renderJob->status == 'done' && strpos($renderJob->message, "Output files uploaded to storage") !== false){
                 // Generate target output path
