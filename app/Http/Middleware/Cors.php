@@ -34,7 +34,7 @@ class Cors
             $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
             $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Origin, Authorization, X-Requested-With, X-Auth-Token');
             $response->headers->set('Access-Control-Allow-Credentials', 'true');
-            $response->headers->set('Access-Control-Allow-Origin', $origin['scheme'] . '://' . $origin['host']);
+            $response->headers->set('Access-Control-Allow-Origin', $origin['scheme'] . '://' . $origin['host'] . (isset($origin['port']) ? ':' . $origin['port'] : ''));
             // $response->headers->set('Access-Control-Allow-Origin', '*');
         }
 
