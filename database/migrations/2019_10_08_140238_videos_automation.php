@@ -14,7 +14,7 @@ class VideosAutomation extends Migration
     public function up()
     {
         // Custom templates
-        Schema::create('custom_templates', function (Blueprint $table) {
+        Schema::create('va_custom_templates', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('vau_id')->nullable(false);
             $table->string('name')->unique()->nullable(false);
@@ -29,7 +29,7 @@ class VideosAutomation extends Migration
         });
 
         // Template medias
-        Schema::create('template_medias', function (Blueprint $table) {
+        Schema::create('va_template_medias', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('template_id');
             $table->unsignedBigInteger('scene')->nullable(false);
@@ -44,20 +44,29 @@ class VideosAutomation extends Migration
         });
 
         // Render jobs
-        Schema::create('render_jobs', function (Blueprint $table) {
+        Schema::create('va_render_jobs', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('template_id');
             $table->unsignedBigInteger('vau_job_id')->unique()->nullable();
+            $table->unsignedBigInteger('user_id')->nullable();
             $table->string('status')->default('queued');
             $table->string('message')->default(null);
             $table->string('output_name')->default(null);
             $table->string('output_url')->default(null);
             $table->integer('progress')->default(0);
             $table->integer('left_seconds')->default(0);
-            $table->integer('video_duration')->nullable();
             $table->foreign('template_id')->references('id')->on('custom_templates');
             $table->timestamps();
             $table->timestamp('finished_at')->nullable();
+        });
+
+        // Render medias
+        Schema::create('va_render_job_medias', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->unsignedBigInteger('render_job_id')->unqiue();
+            $table->unsignedBigInteger('media_id')->nullable(false);
+            $table->string('value')->nullable(false);
+            $table->timestamps();
         });
     }
 
@@ -68,8 +77,9 @@ class VideosAutomation extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('custom_templates');
-        Schema::dropIfExists('template_medias');
-        Schema::dropIfExists('render_jobs');
+        Schema::dropIfExists('va_custom_templates');
+        Schema::dropIfExists('va_template_medias');
+        Schema::dropIfExists('va_render_jobs');
+        Schema::dropIfExists('va_render_job_medias');
     }
 }

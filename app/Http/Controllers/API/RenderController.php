@@ -14,6 +14,7 @@ use GuzzleHttp\Client as GuzzleClient;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\API\CronController;
+use App\RenderJobMedia;
 use GuzzleHttp\Exception\BadResponseException;
 
 class RenderController extends Controller
@@ -50,9 +51,7 @@ class RenderController extends Controller
         // Delete the render job also the outputs
         $renderJob->delete();
         Storage::deleteDirectory(AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $renderJob->template_id . DIRECTORY_SEPARATOR);
-        // TODO: handle video output files
-        // Delete outputs directory for this render job
-        // $renderJobFiles = Storage::files(AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $renderJob->template_id . DIRECTORY_SEPARATOR);
+        // TODO: delete video output assets from the render job medias history
 
         return response()->json(['message' => "The video render job has deleted successfully."], 200);
     }
@@ -101,6 +100,21 @@ class RenderController extends Controller
             // Init inputs
             $inputs = [];
 
+            // File name
+            $videoTitle = isset($body['name']) ? $body['name'] : strtolower(str_replace(' ', '_', $customTemplate->name));
+
+            // Set user ID
+            if(isset($body['user']))
+                $renderJob->user_id = $body['user'];
+
+            // Prepare the callback/notification url
+            $renderJob->template_id = $customTemplate->id;
+            $renderJob->status = RenderJob::DEFAULT_STATUS;
+            $renderJob->created_at = date('Y-m-d H:i:s');
+            $renderJob->updated_at = null;
+            $renderJob->finished_at = null;
+            $renderJob->save();
+
             // Upload the attached files
             try{
                 // Render job unique name id
@@ -119,7 +133,7 @@ class RenderController extends Controller
                         if($request->hasFile($media->palceholder)){
                             $fileName = $uniqueID . strtolower($request->file($media->placeholder)->getClientOriginalName());
                             $targetPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id;
-                            
+
                             if(!Storage::disk('local')->exists($targetPath . DIRECTORY_SEPARATOR . $fileName))
                                 $request->file($media->placeholder)->storeAs($targetPath, $fileName, 'local');
 
@@ -131,21 +145,18 @@ class RenderController extends Controller
                             $inputs[$media->placeholder] = $media->default_value;
                         }
                     }
+
+                    // Store media to render job history
+                    $renderJobMedia = new RenderJobMedia();
+                    $renderJobMedia->media_id = $media->id;
+                    $renderJobMedia->value = $inputs[$media->placeholder];
+
+                    // Add render job medias history
+                    $renderJob->mediasHistory()->save($renderJobMedia);
                 }
             }catch(\Exception $ex){
                 return response()->json(['message' => 'Attached images are not allowed or damaged!'], 400);
             }
-
-            // File name
-            $videoTitle = isset($body['name']) ? $body['name'] : strtolower(str_replace(' ', '_', $customTemplate->name));
-
-            // Prepare the callback/notification url
-            $renderJob->template_id = $customTemplate->id;
-            $renderJob->status = RenderJob::DEFAULT_STATUS;
-            $renderJob->created_at = date('Y-m-d H:i:s');
-            $renderJob->updated_at = null;
-            $renderJob->finished_at = null;
-            $renderJob->save();
 
             // Re-form the body
             $videoData = [];
@@ -187,7 +198,7 @@ class RenderController extends Controller
                 $renderJob->finished_at = date('Y-m-d H:i:s');
                 $renderJob->finished_at = isset($content['finished']) ? date('Y-m-d H:i:s', strtotime($content['finished'])) : null;
 
-                
+
                 // Generate target output path
                 $targetOutputPath = AutomationApp::generateOutputPath($renderJob, $content['outputUrls']['mainFile']);
                 // Set the render job local output url
@@ -197,7 +208,7 @@ class RenderController extends Controller
                 $renderJob->update();
 
                 return response()->json([
-                    'job_id'        => $renderJob->id, 
+                    'job_id'        => $renderJob->id,
                     'output_name'   => $renderJob->output_name,
                     'output_url'    => $renderJob->output_url,
                     'message'       => "The rendering job was successfully created. please wait until finished..."
@@ -227,12 +238,12 @@ class RenderController extends Controller
      * @return JsonResponse|BinaryFileResponse
      */
     public function status(int $renderID)
-    {        
+    {
         // Fetch if this render job exists
         $renderJob = RenderJob::find($renderID);
         if(is_null($renderJob))
             return response()->json(['message' => "Job does not exists!"], 404);
-        elseif(is_null($renderJob->vau_job_id)) 
+        elseif(is_null($renderJob->vau_job_id))
             return response()->json(['message' => "Job requested not created yet!"], 400);
 
         // Refresh the render job details

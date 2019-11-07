@@ -8,11 +8,12 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use wapmorgan\MediaFile\MediaFile;
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use GuzzleHttp\Client as GuzzleClient;
 use Illuminate\Support\Facades\Storage;
 
 class CronController extends Controller
-{    
+{
      /**
      * Notify the user about the render job
      *
@@ -25,7 +26,7 @@ class CronController extends Controller
         $renderJob = RenderJob::find($renderID);
         if(is_null($renderJob))
             return response()->json(['message' => "Job does not exists!"], 404);
-        elseif(is_null($renderJob->vau_job_id)) 
+        elseif(is_null($renderJob->vau_job_id))
             return response()->json(['message' => "Job requested not created yet!"], 400);
         // Get the render job status and update the db
         // Init Guzzle client
@@ -36,7 +37,7 @@ class CronController extends Controller
         // Send the requet to vau API
         $response = $client->request(
             'GET',
-            AutomationApp::API_URL . '/v1/jobs/' . $renderJob->vau_job_id, 
+            AutomationApp::API_URL . '/v1/jobs/' . $renderJob->vau_job_id,
             [
                 // TODO: enable the verification on prod
                 'verify'    =>  false
@@ -53,7 +54,7 @@ class CronController extends Controller
             $renderJob->progress = $content['renderStatus']['progressPercent'];
             $renderJob->left_seconds = $content['renderStatus']['etlSec'];
             $renderJob->finished_at = isset($content['finished']) ? date('Y-m-d H:i:s', strtotime($content['finished'])) : null;
-            
+
             // Save the generated video to the private local resources
             if($renderJob->status == 'done' && strpos($renderJob->message, "Output files uploaded to storage") !== false){
                 $outputName = uniqid() . '_' . pathinfo($content['outputUrls']['mainFile'], PATHINFO_BASENAME);
@@ -63,12 +64,12 @@ class CronController extends Controller
                 Storage::disk('local')->copy($content['outputUrls']['mainFile'], $targetOutputPath);
                 $renderJob->output_url = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $renderJob->template_id, 'fileName' => $outputName]);
             }
-            
+
             // Update the render job info
             $renderJob->update();
 
             // TODO: send notif to user
-            
+
             return response()->json(['data' => $renderJob->toArray()]);
         }
         return response()->json(['message' => "Bad request! please try again or contact support"], 400);
@@ -97,15 +98,6 @@ class CronController extends Controller
             $renderJob->progress = $content['renderStatus']['progressPercent'];
             $renderJob->left_seconds = $content['renderStatus']['etlSec'];
 
-            $media = MediaFile::open($content['outputUrls']['mainFile']);
-            $videoInfo = $media->getVideo();
-            print_r($videoInfo);
-
-            die();
-
-            // Set the video duration
-            $renderJob->video_duration = $content['renderStatus']['etlSec'];
-            
             // Save the generated video to the private local resources
             if($renderJob->status == 'done' && strpos($renderJob->message, "Output files uploaded to storage") !== false){
                 // Generate target output path
@@ -114,9 +106,11 @@ class CronController extends Controller
 
                 // Copy the online output to local
                 copy($content['outputUrls']['mainFile'], $targetOutputPath);
-                
+
                 // Set the output url
                 $renderJob->output_url = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $renderJob->template_id, 'fileName' => pathinfo($targetOutputPath, PATHINFO_BASENAME)]);
+
+
 
                 // Update finished at datetime
                 $renderJob->finished_at = isset($content['finished']) ? date('Y-m-d H:i:s', strtotime($content['finished'])) : date('Y-m-d H:i:s');
