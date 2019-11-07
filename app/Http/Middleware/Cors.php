@@ -9,7 +9,8 @@ class Cors
     /** List of allowed origin URLs */
     private $allowedOrigins = [
         "dev14.v12dev.com",
-        "api.vau.company"
+        "api.vau.company",
+        "localhost"
     ];
 
     /**
