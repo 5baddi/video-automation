@@ -12,7 +12,7 @@ class RenderJobMedia extends Model
      *
      * @var string
      */
-    protected $table = "va_render_job_medias";
+    protected $table = "render_job_medias";
 
     /**
      * The attributes that are mass assignable.

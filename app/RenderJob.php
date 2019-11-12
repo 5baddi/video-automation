@@ -15,7 +15,7 @@ class RenderJob extends Model
      *
      * @var string
      */
-    protected $table = "VA_Render_jobs";
+    protected $table = "render_jobs";
 
     /**
      * The attributes that are mass assignable.

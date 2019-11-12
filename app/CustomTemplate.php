@@ -13,7 +13,7 @@ class CustomTemplate extends Model
      *
      * @var string
      */
-    protected $table = "VA_Custom_templates";
+    protected $table = "custom_templates";
 
     /**
      * The attributes that are mass assignable.
