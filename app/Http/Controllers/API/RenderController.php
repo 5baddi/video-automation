@@ -248,7 +248,7 @@ class RenderController extends Controller
 
         // Refresh the render job details
         if($renderJob->status != 'done')
-            app(CronController::class)->notify($renderJob->id);
+            return app(CronController::class)->notify($renderJob->id);
 
         return response()->json(['data' => $renderJob]);
     }
