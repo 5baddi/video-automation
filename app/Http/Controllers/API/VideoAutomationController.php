@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
+// TODO: Update add template && medias
 class VideoAutomationController extends Controller
 {
     /**
@@ -86,7 +87,8 @@ class VideoAutomationController extends Controller
             'package'       =>  'nullable|string',
             'version'       =>  'nullable',
             'demo'          => 'nullable|mimetypes:video/mp4,video/avi,video/mpeg,video/quicktime',
-            'thumbnail'     => 'nullable|mimes:jpg,jpeg,bmp,png,gif',
+            'thumbnail'     => 'nullable|mimes:jpg,jpeg,bmp,png',
+            'gif'     => 'nullable|mimes:gif',
             'enabled'       =>  'nullable|in:0,1',
             // 'medias'        =>  'required|array|min:1',
             // 'scene.*'        =>  'required|integer|min:1',
