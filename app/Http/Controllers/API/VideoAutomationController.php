@@ -128,7 +128,7 @@ class VideoAutomationController extends Controller
         $customTemplate->save();
 
         // Upload the attached preview and thumbnail
-        if($request->hasfile('demo') || $request->hasFile('thumbnail')){
+        if($request->hasfile('demo') || $request->hasFile('thumbnail') || $request->hasFile('gif')){
             try{
                 // Parse the target path and file names
                 $targetTemplatePath = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id;
