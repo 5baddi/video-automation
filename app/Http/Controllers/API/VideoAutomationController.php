@@ -11,7 +11,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
-// TODO: Update add template && medias
+// TODO: Update add template && medias	
 class VideoAutomationController extends Controller
 {
     /**
