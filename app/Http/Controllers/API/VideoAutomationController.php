@@ -85,7 +85,7 @@ class VideoAutomationController extends Controller
             'name'          =>  'required|string|between:1,100',
             'rotation'      =>  'required|in:' . implode(',', CustomTemplate::ROTAIONS),
             'package'       =>  'nullable|string',
-            'version'       =>  'nullable',
+            'version'       =>  'nullable|string|between:1,25',
             'demo'          =>  'nullable|mimetypes:video/mp4,video/avi,video/mpeg,video/quicktime',
             'thumbnail'     =>  'nullable|mimes:jpg,jpeg,bmp,png',
             'gif'           =>  'nullable|mimes:gif',
