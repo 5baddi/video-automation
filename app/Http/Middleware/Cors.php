@@ -24,8 +24,6 @@ class Cors
         $response = $next($request);        
 
         // Set the allowed origin URL
-        // $request->server('HTTP_REFERER');
-        // $request->headers->get('origin')
         $origin = !is_null($request->server('HTTP_REFERER')) ? $request->server('HTTP_REFERER') : $request->headers->get('origin');
         $origin = parse_url($origin);
         if(isset($origin['host']) && in_array($origin['host'], $this->allowedOrigins)){
@@ -33,8 +31,7 @@ class Cors
             $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
             $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Origin, Authorization, X-Requested-With, X-Auth-Token');
             $response->headers->set('Access-Control-Allow-Credentials', 'true');
-            $response->headers->set('Access-Control-Allow-Origin', $origin['scheme'] . '://' . $origin['host']);
-            // $response->headers->set('Access-Control-Allow-Origin', '*');
+            $response->headers->set('Access-Control-Allow-Origin', $origin['scheme'] . '://' . $origin['host'] . (isset($origin['port']) ? ':' . $origin['port'] : ''));
         }
 
         return $response;
