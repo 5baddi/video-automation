@@ -1,6 +1,5 @@
 /node_modules
 /public/storage
-/storage/*.key
 /vendor
 .env
 .phpunit.result.cache
@@ -13,3 +12,4 @@ yarn-error.log
 /.env
 /node_modules/*
 /resources/js/*
+/storage/
