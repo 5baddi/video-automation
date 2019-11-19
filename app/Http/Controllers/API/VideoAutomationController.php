@@ -47,10 +47,10 @@ class VideoAutomationController extends Controller
             ->get();
 
         if($customTemplates->count() > 0)
-            return response()->json(['data' => $customTemplates]);
+            return response()->json(['status' => 'success', 'data' => $customTemplates]);
 
         // Return no content if no data
-        return response()->json([], 204);
+        return response()->json(['status' => 'no data', 'data' => null], 204);
     }
 
     /**
@@ -63,9 +63,9 @@ class VideoAutomationController extends Controller
     {
         $customTemplate = CustomTemplate::with('medias')->find($templateID);
         if(!is_null($customTemplate))
-            return response()->json(['data' => $customTemplate->toArray()]);
+            return response()->json(['status' => 'success', 'data' => $customTemplate->toArray()]);
 
-        return response()->json(['message' => "The requested template does not exists!"], 404);
+        return response()->json(['status' => 'not found', 'message' => "The requested template does not exists!"], 404);
     }
 
     /**
@@ -95,12 +95,12 @@ class VideoAutomationController extends Controller
         // Validate data
         $validator = Validator::make($data, $rules);
         if($validator->fails())
-            return response()->json(['message' => $validator->getMessageBag()->all()], 400);
+            return response()->json(['status' => 'bad request', 'message' => $validator->getMessageBag()->all()], 400);
 
         // Verify if this template already exists
         $existsCustomTemplate = CustomTemplate::where('name', $data['name'])->orWhere('vau_id', $data['vau_id'])->get();
         if($existsCustomTemplate->count() > 0)
-            return response()->json(['message' => "The template '" . $data['name'] . "' is already exists!"], 400);
+            return response()->json(['status' => 'bad request', 'message' => "The template '" . $data['name'] . "' is already exists!"], 400);
 
         // Init custom template obj
         $customTemplate = new CustomTemplate();
@@ -152,6 +152,7 @@ class VideoAutomationController extends Controller
 
         // Return the inserted template id
         return response()->json([
+            'status'      => 'success',
             'template_id' => $customTemplate->id, 
             'demo'        => $customTemplate->preview_url,
             'thumbnail'   => $customTemplate->thumbnail_url,
@@ -195,12 +196,12 @@ class VideoAutomationController extends Controller
         // Validate data
         $validator = Validator::make($data, $rules);
         if($validator->fails())
-            return response()->json(['message' => $validator->getMessageBag()->all()], 400);
+            return response()->json(['status' => 'bad request', 'message' => $validator->getMessageBag()->all()], 400);
 
         // Verify if this template already exists
         $customTemplate = CustomTemplate::find($templateID);
         if(is_null($customTemplate))
-            return response()->json(['message' => "The requested template does not exists!"], 404);
+            return response()->json(['status' => 'not found', 'message' => "The requested template does not exists!"], 404);
         
         // Copy the preview
         // if(isset($data['preview_path']))
@@ -265,7 +266,7 @@ class VideoAutomationController extends Controller
         // }
 
         // Return the inserted template id
-        return response()->json(['template_id' => $customTemplate->id, 'message' => "The template '" . $data['name'] . "' has been updated successfully."]);
+        return response()->json(['status' => 'success', 'template_id' => $customTemplate->id, 'message' => "The template '" . $data['name'] . "' has been updated successfully."]);
     }
 
     /**
@@ -278,7 +279,7 @@ class VideoAutomationController extends Controller
     {
         $customTemplate = CustomTemplate::with(['medias', 'jobs'])->find($templateID);
         if(is_null($customTemplate))
-            return response()->json(['message' => 'The requested template does not exists!'], 404);
+            return response()->json(['status' => 'not found', 'message' => 'The requested template does not exists!'], 404);
             
         // Delete the custom template model also the relations
         $customTemplate->delete();
@@ -292,7 +293,7 @@ class VideoAutomationController extends Controller
         if(is_dir($templateDirectory))
             shell_exec("rm -rf ${templateDirectory}");
 
-        return response()->json(['message' => "The " . $customTemplate->name . " has been deleted successfully."], 200);
+        return response()->json(['status' => 'success', 'message' => "The " . $customTemplate->name . " has been deleted successfully."], 200);
     }
 
     /**
@@ -326,12 +327,12 @@ class VideoAutomationController extends Controller
         // Validate the data
         $validator = Validator::make($media, $rules);
         if($validator->fails())
-            return response()->json(['message' => $validator->getMessageBag()->all()], 400);
+            return response()->json(['status' => 'bad request', 'message' => $validator->getMessageBag()->all()], 400);
 
         // Verify if this template already exists
         $customTemplate = CustomTemplate::find($templateID);
         if(is_null($customTemplate))
-            return response()->json(['message' => "The requested template does not exists!"], 404);
+            return response()->json(['status' => 'not found', 'message' => "The requested template does not exists!"], 404);
 
         // Add the template medias
         $templateMedia = new TemplateMedia();
@@ -407,7 +408,7 @@ class VideoAutomationController extends Controller
         $templateMedia->save();
 
         // Return the done response
-        return response()->json(['media_id' => $templateMedia->id, 'message' => "The medias has been added successfully."]);
+        return response()->json(['status' => 'success', 'media_id' => $templateMedia->id, 'message' => "The medias has been added successfully."]);
     }
 
     /**
@@ -436,12 +437,12 @@ class VideoAutomationController extends Controller
         // Validate the submitted data
         $validator = Validator::make($media, $rules);
         if($validator->fails())
-            return response()->json(['message' => $validator->getMessageBag()->all()], 400);
+            return response()->json(['status' => 'bad request', 'message' => $validator->getMessageBag()->all()], 400);
 
         // Verify if this template media already exists
         $templateMedia = TemplateMedia::width('template')->find($mediaID);
         if(is_null($templateMedia))
-            return response()->json(['message' => "The requested media does not exists!"], 404);
+            return response()->json(['status' => 'not found', 'message' => "The requested media does not exists!"], 404);
 
         // Update the template media
         if(isset($media['placeholder']))
@@ -487,7 +488,7 @@ class VideoAutomationController extends Controller
         $templateMedia->update();
 
         // Return the done response
-        return response()->json(['media_id' => $templateMedia->id, 'message' => "The media has been updated successfully."]);
+        return response()->json(['status' => 'success', 'media_id' => $templateMedia->id, 'message' => "The media has been updated successfully."]);
     }
 
     /**
@@ -500,7 +501,7 @@ class VideoAutomationController extends Controller
     {
         $templateMedia = TemplateMedia::find($mediaID);
         if(is_null($templateMedia))
-            return response()->json(['message' => 'The requested media does not exists!'], 404);
+            return response()->json(['status' => 'success', 'message' => 'The requested media does not exists!'], 404);
             
         // Delete the custom template model also the relations
         $templateMedia->delete();
@@ -509,6 +510,6 @@ class VideoAutomationController extends Controller
         // if(!is_null($templateMedia->preview_path) && file_exists($templateMedia->preview_path))
         //     unlink($templateMedia->preview_path);
 
-        return response()->json(['message' => "The media has been deleted successfully."], 200);
+        return response()->json(['status' => 'success', 'message' => "The media has been deleted successfully."], 200);
     }
 }

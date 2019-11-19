@@ -25,9 +25,9 @@ class CronController extends Controller
         // Fetch if this render job exists
         $renderJob = RenderJob::find($renderID);
         if(is_null($renderJob))
-            return response()->json(['message' => "Job does not exists!"], 404);
+            return response()->json(['status' => 'not found', 'message' => "Job does not exists!"], 404);
         elseif(is_null($renderJob->vau_job_id))
-            return response()->json(['message' => "Job requested not created yet!"], 400);
+            return response()->json(['status' => 'bad request', 'message' => "Job requested not created yet!"], 400);
         // Get the render job status and update the db
         // Init Guzzle client
         $headers = [
@@ -40,7 +40,7 @@ class CronController extends Controller
             AutomationApp::API_URL . '/v1/jobs/' . $renderJob->vau_job_id,
             [
                 // TODO: enable the verification on prod
-                'verify'    =>  false
+                'verify'    =>  true
             ]
         );
         // Handle the response
@@ -70,9 +70,9 @@ class CronController extends Controller
 
             // TODO: send notif to user
 
-            return response()->json(['data' => $renderJob->toArray()]);
+            return response()->json(['status' => 'success', 'data' => $renderJob->toArray()]);
         }
-        return response()->json(['message' => "Bad request! please try again or contact support"], 400);
+        return response()->json(['status' => 'bad request', 'message' => "Bad request! please try again or contact support"], 400);
     }
 
     /**
@@ -87,7 +87,7 @@ class CronController extends Controller
         // Fetch if this render job exists
         $renderJob = RenderJob::find($renderID);
         if(is_null($renderJob))
-            return response()->json(['message' => "Job does not exists!"], 404);
+            return response()->json(['status' => 'not found', 'message' => "Job does not exists!"], 404);
 
         // Get the render job status and update the db
         $content = $request->all();
@@ -121,9 +121,9 @@ class CronController extends Controller
 
             // TODO: send notif to user
 
-            return response()->json(['data' => $renderJob->toArray()]);
+            return response()->json(['status' => 'success', 'data' => $renderJob->toArray()]);
         }
 
-        return response()->json(['message' => "Bad request! please try again or contact support"], 400);
+        return response()->json(['status' => 'bad request', 'message' => "Bad request! please try again or contact support"], 400);
     }
 }

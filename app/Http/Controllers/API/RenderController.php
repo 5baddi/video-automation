@@ -28,7 +28,7 @@ class RenderController extends Controller
     {
         $renderedJobs = RenderJob::orderBy('created_at', 'desc')->get();
         if(sizeof($renderedJobs) > 0)
-            return response()->json(['data' => $renderedJobs], 200);
+            return response()->json(['status' => 'success', 'data' => $renderedJobs], 200);
 
         // No content
         return response()->json(null, 204);
@@ -46,14 +46,14 @@ class RenderController extends Controller
         // Get the exists render job
         $renderJob = RenderJob::find($renderJobID);
         if(is_null($renderJob))
-            return response()->json(['message' => "Video render job doesn't exists!"], 404);
+            return response()->json(['status' => 'not found', 'message' => "Video render job doesn't exists!"], 404);
 
         // Delete the render job also the outputs
         $renderJob->delete();
         Storage::deleteDirectory(AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $renderJob->template_id . DIRECTORY_SEPARATOR);
         // TODO: delete video output assets from the render job medias history
 
-        return response()->json(['message' => "The video render job has deleted successfully."], 200);
+        return response()->json(['status' => 'success', 'message' => "The video render job has deleted successfully."], 200);
     }
 
     /**
@@ -79,7 +79,7 @@ class RenderController extends Controller
             // Validate the main body template
             $validator = Validator::make($body, $rules);
             if($validator->fails())
-                return response()->json(['message' => $validator->getMessageBag()->all()], 400);
+                return response()->json(['status' => 'bad request', 'message' => $validator->getMessageBag()->all()], 400);
 
             // Set the template id
             $selectedTemplateID = $body['template'];
@@ -87,15 +87,15 @@ class RenderController extends Controller
             // Fetch the custom template
             $customTemplate = CustomTemplate::find($selectedTemplateID);
             if(is_null($customTemplate))
-                return response()->json(['message' => "Template does not exists!"], 400);
+                return response()->json(['status' => 'bad request', 'message' => "Template does not exists!"], 400);
 
             // Check the inputs are valid
             $customTemplateMedias = $customTemplate->medias();
             $notIncludedCount = $customTemplateMedias->whereNotIn('type', ['text', 'color'])->count();
             if($customTemplate->enabled != 1)
-                return response()->json(['message' => "This template not enabled or not for use!"], 400);
+                return response()->json(['status' => 'bad request', 'message' => "This template not enabled or not for use!"], 400);
             elseif(sizeof($request->file()) < $notIncludedCount)
-                return response()->json(['message' => "The submitted images are not the same as those required by the video template!"], 400);
+                return response()->json(['status' => 'bad request', 'message' => "The submitted images are not the same as those required by the video template!"], 400);
 
             // Init inputs
             $inputs = [];
@@ -155,7 +155,7 @@ class RenderController extends Controller
                     $renderJob->mediasHistory()->save($renderJobMedia);
                 }
             }catch(\Exception $ex){
-                return response()->json(['message' => 'Attached images are not allowed or damaged!'], 400);
+                return response()->json(['status' => 'bad request', 'message' => 'Attached images are not allowed or damaged!'], 400);
             }
 
             // Re-form the body
@@ -217,14 +217,14 @@ class RenderController extends Controller
         }catch(BadResponseException $ex){
             switch($ex->getResponse()->getStatusCode()){
                 case 400:
-                    return response()->json(['message' => "Please verify that the template entries are correct!"], 400);
+                    return response()->json(['status' => 'bad request', 'message' => "Please verify that the template entries are correct!"], 400);
                 break;
                 case 401:
                 case 404:
-                    return response()->json(['message' => "Incorrect video render job identity! please try again or contact support"], 404);
+                    return response()->json(['status' => 'not found', 'message' => "Incorrect video render job identity! please try again or contact support"], 404);
                 break;
                 default:
-                    return response()->json(['message' => AutomationApp::INTERNAL_SERVER_ERROR], 500);
+                    return response()->json(['status' => 'error', 'message' => AutomationApp::INTERNAL_SERVER_ERROR], 500);
                 break;
             }
         }
@@ -242,14 +242,14 @@ class RenderController extends Controller
         // Fetch if this render job exists
         $renderJob = RenderJob::find($renderID);
         if(is_null($renderJob))
-            return response()->json(['message' => "Job does not exists!"], 404);
+            return response()->json(['status' => 'not found', 'message' => "Job does not exists!"], 404);
         elseif(is_null($renderJob->vau_job_id))
-            return response()->json(['message' => "Job requested not created yet!"], 400);
+            return response()->json(['status' => 'bad request', 'message' => "Job requested not created yet!"], 400);
 
         // Refresh the render job details
         if($renderJob->status != 'done')
             return app(CronController::class)->notify($renderJob->id);
 
-        return response()->json(['data' => $renderJob]);
+        return response()->json(['status' => 'success', 'data' => $renderJob]);
     }
 }
