@@ -10,7 +10,8 @@ class Cors
     private $allowedOrigins = [
         "dev14.v12dev.com",
         "api.vau.company",
-        "localhost"
+        "localhost",
+        "127.0.0.1"
     ];
 
     /**
