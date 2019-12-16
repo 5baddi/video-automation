@@ -62,7 +62,7 @@ class Handler extends ExceptionHandler
                     $message = "Method not allowed!";
                 break;
                 default:
-                    $message = "Internal server error!";
+                    $message = (!env('APP_DEBUG')) ? "Internal server error!" : $exception->getMessage();
                 break;
             }
 
