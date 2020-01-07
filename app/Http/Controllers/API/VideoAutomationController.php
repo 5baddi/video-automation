@@ -80,7 +80,7 @@ class VideoAutomationController extends Controller
 
         // Custom template rules
         $rules = [
-            'vau_id'        =>  'required|integer',
+            // 'vau_id'        =>  'required|integer',
             'name'          =>  'required|string|between:1,100',
             'rotation'      =>  'required|in:' . implode(',', CustomTemplate::ROTAIONS),
             'package'       =>  'nullable|string',
@@ -97,7 +97,8 @@ class VideoAutomationController extends Controller
             return response()->json(['status' => 'bad request', 'message' => $validator->getMessageBag()->all()], 400);
 
         // Verify if this template already exists
-        $existsCustomTemplate = CustomTemplate::where('name', $data['name'])->orWhere('vau_id', $data['vau_id'])->get();
+        // $existsCustomTemplate = CustomTemplate::where('name', $data['name'])->orWhere('vau_id', $data['vau_id'])->get();
+        $existsCustomTemplate = CustomTemplate::where('name', $data['name'])->get();
         if($existsCustomTemplate->count() > 0)
             return response()->json(['status' => 'bad request', 'message' => "The template '" . $data['name'] . "' is already exists!"], 400);
 
@@ -106,7 +107,7 @@ class VideoAutomationController extends Controller
         
         // Store the template info
         $customTemplate->name = $data['name'];
-        $customTemplate->vau_id = $data['vau_id'];
+        // $customTemplate->vau_id = $data['vau_id'];
         if(isset($data['package']))
             $customTemplate->package = $data['package'];
         if(isset($data['version']))
@@ -318,7 +319,7 @@ class VideoAutomationController extends Controller
             'default_value'=>  'nullable|string',
             'position'     =>  'nullable|integer',
             'thumbnail_url'=>  'nullable|mimes:jpg,jpeg,bmp,png,gif',
-            'default'      =>  'nullable|mimes:jpg,jpeg,bmp,png,gif',
+            'default'      =>  'nullable|mimes:jpg,jpeg,bmp,png,gif,mpga,wav,audio/mpeg,audio/mp3',
             // 'updated_at'    =>  'datetime:Y-m-d H:i:s',
             // 'created_at'    =>  'datetime:Y-m-d H:i:s',
         ];
