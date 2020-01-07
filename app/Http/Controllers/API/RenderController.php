@@ -231,6 +231,182 @@ class RenderController extends Controller
     }
 
     /**
+     * Exec render job
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function renderV2(Request $request) : JsonResponse
+    {
+        try{
+            // Init the render job
+            $renderJob = new RenderJob();
+
+            // Handle requested template from body json to object
+            $body = $request->all();
+
+            // Validation rules
+            $rules = [
+                'template'                  =>  'required|integer',
+                'name'                      =>  'nullable|string'
+            ];
+            // Validate the main body template
+            $validator = Validator::make($body, $rules);
+            if($validator->fails())
+                return response()->json(['status' => 'bad request', 'message' => $validator->getMessageBag()->all()], 400);
+
+            // Set the template id
+            $selectedTemplateID = $body['template'];
+
+            // Fetch the custom template
+            $customTemplate = CustomTemplate::find($selectedTemplateID);
+            if(is_null($customTemplate))
+                return response()->json(['status' => 'bad request', 'message' => "Template does not exists!"], 400);
+
+            // Check the inputs are valid
+            $customTemplateMedias = $customTemplate->medias();
+            $notIncludedCount = $customTemplateMedias->whereNotIn('type', ['text', 'color', 'audio'])->count();
+            if($customTemplate->enabled != 1)
+                return response()->json(['status' => 'bad request', 'message' => "This template not enabled or not for use!"], 400);
+            //elseif(sizeof($request->file()) < $notIncludedCount)
+              //  return response()->json(['status' => 'bad request', 'message' => "The submitted images are not the same as those required by the video template!"], 400);
+
+            // Init inputs
+            $inputs = [];
+
+            // File name
+            $videoTitle = isset($body['name']) ? $body['name'] : strtolower(str_replace(' ', '_', $customTemplate->name));
+
+            // Set user ID
+            if(isset($body['user']))
+                $renderJob->user_id = $body['user'];
+
+            // Prepare the callback/notification url
+            $renderJob->template_id = $customTemplate->id;
+            $renderJob->status = RenderJob::DEFAULT_STATUS;
+            $renderJob->created_at = date('Y-m-d H:i:s');
+            $renderJob->updated_at = null;
+            $renderJob->finished_at = null;
+            $renderJob->save();
+
+            // Upload the attached files
+            try{
+                // Render job unique name id
+                $uniqueID = uniqid(date('dmy')) . '_';
+
+                // Handle the request media by template
+                foreach($customTemplate->medias()->get() as $media){
+                    // Ignore not images placeholder
+                    if($media->type != TemplateMedia::SCENE_TYPE){
+                        if(isset($body[$media->placeholder]))
+                            $inputs[$media->placeholder] = $body[$media->placeholder];
+                        else
+                            $inputs[$media->placeholder] = $media->default_value;
+                    }else{
+                        // Attached image
+                        if($request->hasFile($media->palceholder)){
+                            $fileName = $uniqueID . strtolower($request->file($media->placeholder)->getClientOriginalName());
+                            $targetPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id;
+
+                            if(!Storage::disk('local')->exists($targetPath . DIRECTORY_SEPARATOR . $fileName))
+                                $request->file($media->placeholder)->storeAs($targetPath, $fileName, 'local');
+
+                            // Relative url
+                            $inputs[$media->placeholder] = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $media->template_id, 'fileName' => $fileName]);
+                        }
+                        // It's image & not attached
+                        else{
+                            $inputs[$media->placeholder] = $media->default_value;
+                        }
+                    }
+
+                    // Store media to render job history
+                    $renderJobMedia = new RenderJobMedia();
+                    $renderJobMedia->media_id = $media->id;
+                    $renderJobMedia->value = $inputs[$media->placeholder];
+
+                    // Add render job medias history
+                    $renderJob->mediasHistory()->save($renderJobMedia);
+                }
+            }catch(\Exception $ex){
+                return response()->json(['status' => 'bad request', 'message' => 'Attached images are not allowed or damaged!'], 400);
+            }
+
+            // Re-form the body
+            $videoData = [];
+            // $videoData['template'] = $body['template'];
+            $videoData['template']['id'] = $customTemplate->vau_id;
+            $videoData['input'] = $inputs;
+            $videoData['name'] = $videoTitle;
+            $videoData['notificationUrl'] = route('vau.notify', ['jobID' => $renderJob->id]);
+
+            dd($videoData);
+
+            // Init Guzzle client
+            $headers = [
+                // 'Content-Type'  =>  'application/json',
+                'X-AUTH-TOKEN'  =>  AutomationApp::ACCESS_TOKEN
+            ];
+            $client = new GuzzleClient(['headers' => $headers]);
+
+            // Send the requet to vau API
+            $response = $client->post(
+                AutomationApp::API_URL . '/v1/render',
+                [RequestOptions::JSON => $videoData]
+            );
+
+            // Handle the response
+            if($response->getStatusCode() === 200){
+                // Content of response
+                $content = json_decode($response->getBody()->getContents(), true);
+
+                // Set the VAU API render job id
+                if(is_null($renderJob->vau_job_id))
+                    $renderJob->vau_job_id = $content['id'];
+
+                // Update the render job infos
+                $renderJob->status = $content['renderStatus']['state'];
+                $renderJob->message = $content['renderStatus']['message'];
+                $renderJob->output_name = strtolower(str_replace(' ', '_', $videoTitle));
+                $renderJob->progress = $content['renderStatus']['progressPercent'];
+                $renderJob->left_seconds = $content['renderStatus']['etlSec'];
+                $renderJob->created_at = date('Y-m-d H:i:s', strtotime($content['created']));
+                $renderJob->finished_at = date('Y-m-d H:i:s');
+                $renderJob->finished_at = isset($content['finished']) ? date('Y-m-d H:i:s', strtotime($content['finished'])) : null;
+
+
+                // Generate target output path
+                $targetOutputPath = AutomationApp::generateOutputPath($renderJob, $content['outputUrls']['mainFile']);
+                // Set the render job local output url
+                $renderJob->output_url = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $renderJob->template_id, 'fileName' => pathinfo($targetOutputPath, PATHINFO_BASENAME)]);
+
+                // Update render job
+                $renderJob->update();
+
+                return response()->json([
+                    'job_id'        => $renderJob->id,
+                    'output_name'   => $renderJob->output_name,
+                    'output_url'    => $renderJob->output_url,
+                    'message'       => "The rendering job was successfully created. please wait until finished..."
+                ]);
+            }
+        }catch(BadResponseException $ex){
+            switch($ex->getResponse()->getStatusCode()){
+                case 400:
+                    return response()->json(['status' => 'bad request', 'message' => "Please verify that the template entries are correct!"], 400);
+                break;
+                case 401:
+                case 404:
+                    return response()->json(['status' => 'not found', 'message' => "Incorrect video render job identity! please try again or contact support"], 404);
+                break;
+                default:
+                    return response()->json(['status' => 'error', 'message' => AutomationApp::INTERNAL_SERVER_ERROR], 500);
+                break;
+            }
+        }
+    }
+
+    /**
      * Get status of render job
      *
      * @param int $renderID

@@ -44,7 +44,7 @@ Route::group(['middleware' => ['api', 'cors'], 'namespace' => 'API', 'prefix' =>
 // V2 routes
 Route::group(['middleware' => ['api', 'cors'], 'namespace' => 'API', 'prefix' => 'v2'], function () {
     // Start a render job
-    Route::post('/render', 'RenderController@render');
+    Route::post('/render', 'RenderController@renderV2');
     // Get list of rendered jobs
     Route::get('/render/videos', 'RenderController@index');
     // Get job progress
