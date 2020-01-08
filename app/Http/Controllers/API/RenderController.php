@@ -306,7 +306,7 @@ class RenderController extends Controller
                             'type'      =>  'data',
                             'value'     => ($value = $request->input($media->placeholder)),
                             'property'  =>  'Source Text',
-                            'layerName' =>  $media->palceholder
+                            'layerName' =>  $media->placeholder
                         ];
                     }
 
