@@ -7,8 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TemplateMedia extends Model
 { 
-    const ALLOWED_TYPES = ["image", "text", "color"];
+    const ALLOWED_TYPES = ["image", "text", "color", "audio"];
     const SCENE_TYPE = self::ALLOWED_TYPES[0];
+    const TEXT_TYPE = self::ALLOWED_TYPES[1];
 
     /**
      * The database table used by the model.

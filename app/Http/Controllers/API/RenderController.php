@@ -264,22 +264,22 @@ class RenderController extends Controller
                 return response()->json(['status' => 'bad request', 'message' => "Template does not exists!"], 400);
 
             // Check the inputs are valid
-            $customTemplateMedias = $customTemplate->medias();
-            $notIncludedCount = $customTemplateMedias->whereNotIn('type', ['text', 'color', 'audio'])->count();
+            // $customTemplateMedias = $customTemplate->medias();
+            // $notIncludedCount = $customTemplateMedias->whereNotIn('type', ['text', 'color', 'audio'])->count();
             if($customTemplate->enabled != 1)
                 return response()->json(['status' => 'bad request', 'message' => "This template not enabled or not for use!"], 400);
             //elseif(sizeof($request->file()) < $notIncludedCount)
               //  return response()->json(['status' => 'bad request', 'message' => "The submitted images are not the same as those required by the video template!"], 400);
 
-            // Init inputs
-            $inputs = [];
+            // Init footage
+            $footage = [];
 
             // File name
             $videoTitle = isset($body['name']) ? $body['name'] : strtolower(str_replace(' ', '_', $customTemplate->name));
 
             // Set user ID
-            if(isset($body['user']))
-                $renderJob->user_id = $body['user'];
+            // if(isset($body['user']))
+            //     $renderJob->user_id = $body['user'];
 
             // Prepare the callback/notification url
             $renderJob->template_id = $customTemplate->id;
@@ -292,66 +292,97 @@ class RenderController extends Controller
             // Upload the attached files
             try{
                 // Render job unique name id
-                $uniqueID = uniqid(date('dmy')) . '_';
+                $uniqueID =  uniqid(date('dmy')) . '_';
 
                 // Handle the request media by template
                 foreach($customTemplate->medias()->get() as $media){
-                    // Ignore not images placeholder
-                    if($media->type != TemplateMedia::SCENE_TYPE){
-                        if(isset($body[$media->placeholder]))
-                            $inputs[$media->placeholder] = $body[$media->placeholder];
-                        else
-                            $inputs[$media->placeholder] = $media->default_value;
-                    }else{
-                        // Attached image
-                        if($request->hasFile($media->palceholder)){
-                            $fileName = $uniqueID . strtolower($request->file($media->placeholder)->getClientOriginalName());
-                            $targetPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id;
-
-                            if(!Storage::disk('local')->exists($targetPath . DIRECTORY_SEPARATOR . $fileName))
-                                $request->file($media->placeholder)->storeAs($targetPath, $fileName, 'local');
-
-                            // Relative url
-                            $inputs[$media->placeholder] = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $media->template_id, 'fileName' => $fileName]);
-                        }
-                        // It's image & not attached
-                        else{
-                            $inputs[$media->placeholder] = $media->default_value;
-                        }
+                    // Init current value
+                    $value = null;
+                    
+                    // Handle Text footage
+                    if($media->type == TemplateMedia::TEXT_TYPE && !is_null($request->input($media->placeholder))){
+                        // Add Text to Footage
+                        $footage[] = [
+                            'type'      =>  'data',
+                            'value'     => ($value = $request->input($media->placeholder)),
+                            'property'  =>  'Source Text',
+                            'layerName' =>  $media->palceholder
+                        ];
                     }
 
-                    // Store media to render job history
-                    $renderJobMedia = new RenderJobMedia();
-                    $renderJobMedia->media_id = $media->id;
-                    $renderJobMedia->value = $inputs[$media->placeholder];
+                    // Handle Image footage
+                    if($media->type == TemplateMedia::SCENE_TYPE && $request->hasFile($media->palceholder)){
+                        // Attached image
+                        $fileName = $uniqueID . strtolower($request->file($media->placeholder)->getClientOriginalName());
+                        $targetPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id;
 
-                    // Add render job medias history
-                    $renderJob->mediasHistory()->save($renderJobMedia);
+                        if(!Storage::disk('local')->exists($targetPath . DIRECTORY_SEPARATOR . $fileName))
+                            $request->file($media->placeholder)->storeAs($targetPath, $fileName, 'local');
+
+                        // Relative url TODO: load default image if not exists
+                        $imageUrl = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $media->template_id, 'fileName' => $fileName]);
+
+                        // Add Image to Footage
+                        $footage[] = [
+                            'type'      =>  TemplateMedia::SCENE_TYPE,
+                            'src'       =>  ($value = $imageUrl),
+                            'layerName' =>  $media->palceholder
+                        ];
+                    }
+
+                    // Save render job media
+                    if(!is_null($value)){
+                        // Store media to render job history
+                        $renderJobMedia = new RenderJobMedia();
+                        $renderJobMedia->media_id = $media->id;
+                        $renderJobMedia->value = $value;
+
+                        // Add render job medias history
+                        $renderJob->mediasHistory()->save($renderJobMedia);
+                    }
                 }
             }catch(\Exception $ex){
                 return response()->json(['status' => 'bad request', 'message' => 'Attached images are not allowed or damaged!'], 400);
             }
 
-            // Re-form the body
-            $videoData = [];
-            // $videoData['template'] = $body['template'];
-            $videoData['template']['id'] = $customTemplate->vau_id;
-            $videoData['input'] = $inputs;
-            $videoData['name'] = $videoTitle;
-            $videoData['notificationUrl'] = route('vau.notify', ['jobID' => $renderJob->id]);
+            // Final output name
+            $finalOutputName = strtolower(str_replace(' ', '_', $videoTitle)) . ".mp4";
 
-            dd($videoData);
+            // Re-form the body
+            $videoData = [
+                'template'  =>  [
+                    'src'           =>  \App\AutomationApp::DEFAULT_TEMPLATES_DIRECTORY . $customTemplate->id . '/' . $customTemplate->id . '.aep',
+                    'composition'   =>  'LANDSCAPE'
+                ],
+                'assets'    =>  $footage,
+                'actions'   =>  [
+                    'postrender'    =>  [
+                        [
+                            "module"    => "@nexrender/action-encode", 
+                            "preset"    => "mp4", 
+                            "output"    => $finalOutputName
+                        ], 
+                        [
+                            "module"    => "@nexrender/action-copy", 
+                            "input"     => $finalOutputName, 
+                            "output"    => \App\AutomationApp::DEFAULT_OUTPUT_DIRECTORY . $finalOutputName 
+                        ] 
+                    ]
+                    // TODO: upload video via FTP to V12 servers
+                ]
+            ];
 
             // Init Guzzle client
             $headers = [
-                // 'Content-Type'  =>  'application/json',
-                'X-AUTH-TOKEN'  =>  AutomationApp::ACCESS_TOKEN
+                'Content-Type'  =>  'application/json',
+                // 'X-AUTH-TOKEN'  =>  AutomationApp::ACCESS_TOKEN
+                "nexrender-secret"  =>  $_ENV['SERVER_SECRET']
             ];
             $client = new GuzzleClient(['headers' => $headers]);
 
             // Send the requet to vau API
             $response = $client->post(
-                AutomationApp::API_URL . '/v1/render',
+                $_ENV['SERVER_ADDRESS'] . 'jobs',
                 [RequestOptions::JSON => $videoData]
             );
 
@@ -360,23 +391,18 @@ class RenderController extends Controller
                 // Content of response
                 $content = json_decode($response->getBody()->getContents(), true);
 
-                // Set the VAU API render job id
-                if(is_null($renderJob->vau_job_id))
-                    $renderJob->vau_job_id = $content['id'];
-
                 // Update the render job infos
-                $renderJob->status = $content['renderStatus']['state'];
-                $renderJob->message = $content['renderStatus']['message'];
-                $renderJob->output_name = strtolower(str_replace(' ', '_', $videoTitle));
-                $renderJob->progress = $content['renderStatus']['progressPercent'];
-                $renderJob->left_seconds = $content['renderStatus']['etlSec'];
-                $renderJob->created_at = date('Y-m-d H:i:s', strtotime($content['created']));
-                $renderJob->finished_at = date('Y-m-d H:i:s');
+                $renderJob->status = $content['state'];
+                $renderJob->message = "The rendering job has been queued";
+                $renderJob->output_name = pathinfo($finalOutputName, PATHINFO_FILENAME);
+                $renderJob->progress = 0;
+                $renderJob->left_seconds = null;
+                $renderJob->created_at = date('Y-m-d H:i:s');
                 $renderJob->finished_at = isset($content['finished']) ? date('Y-m-d H:i:s', strtotime($content['finished'])) : null;
 
 
                 // Generate target output path
-                $targetOutputPath = AutomationApp::generateOutputPath($renderJob, $content['outputUrls']['mainFile']);
+                $targetOutputPath = AutomationApp::generateOutputPath($renderJob, $finalOutputName);
                 // Set the render job local output url
                 $renderJob->output_url = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $renderJob->template_id, 'fileName' => pathinfo($targetOutputPath, PATHINFO_BASENAME)]);
 
@@ -389,8 +415,24 @@ class RenderController extends Controller
                     'output_url'    => $renderJob->output_url,
                     'message'       => "The rendering job was successfully created. please wait until finished..."
                 ]);
+            }elseif($response->getStatusCode() === 204){
+                // Update render job status
+                $renderJob->finished_at = date('Y-m-d H:i:s');
+                $renderJob->status = "failed";
+                $renderJob->message = "Rendering job failed! Please try again or contact the support..";
+                $renderJob->update();
+
+                // Render job not started
+                return response()->json(['status' => 'bad request', 'message' => "Please verify that the template entries are correct!"], 400);
             }
         }catch(BadResponseException $ex){
+            // Update render job status
+            $renderJob->finished_at = date('Y-m-d H:i:s');
+            $renderJob->status = "failed";
+            $renderJob->message = "Rendering job failed! Please try again or contact the support..";
+            $renderJob->update();
+
+            // Return error status
             switch($ex->getResponse()->getStatusCode()){
                 case 400:
                     return response()->json(['status' => 'bad request', 'message' => "Please verify that the template entries are correct!"], 400);
