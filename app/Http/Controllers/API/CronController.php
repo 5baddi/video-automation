@@ -74,6 +74,74 @@ class CronController extends Controller
         }
         return response()->json(['status' => 'bad request', 'message' => "Bad request! please try again or contact support"], 400);
     }
+    
+    /**
+     * Notify the user about the render job
+     *
+     * @param int $renderID
+     * @return JsonResponse
+     */
+    public function notifyV2(int $renderID) : JsonResponse
+    {
+        // Fetch if this render job exists
+        $renderJob = RenderJob::find($renderID);
+        if(is_null($renderJob))
+            return response()->json(['status' => 'not found', 'message' => "Job does not exists!"], 404);
+        elseif(is_null($renderJob->uid))
+            return response()->json(['status' => 'bad request', 'message' => "Job requested not created yet!"], 400);
+        // Get the render job status and update the db
+        // Init Guzzle client
+        $headers = [
+            "nexrender-secret"  =>  $_ENV['SERVER_SECRET']
+        ];
+        $client = new GuzzleClient(['headers' => $headers]);
+        // Send the requet to vau API
+        $response = $client->request(
+            'GET',
+            $_ENV['SERVER_ADDRESS'] . 'jobs/' . $renderJob->uid,
+            [
+                // TODO: enable the verification on prod
+                'verify'    =>  false
+            ]
+        );
+        // Handle the response
+        if($response->getStatusCode() === 200){
+            // Content of response
+            $content = json_decode($response->getBody()->getContents(), true);
+
+            // Update render job
+            $renderJob->status = $content['state'];
+            $renderJob->progress = isset($content['progress']) ? $content['progress'] : 0;
+            // $renderJob->left_seconds = $content['renderStatus']['etlSec'];
+            $renderJob->updated_at = isset($content['updatedAt']) ? date('Y-m-d H:i:s', strtotime($content['updatedAt'])) : null;
+
+            // Save the generated video to the private local resources
+            if($renderJob->status == 'finished'){
+                $renderJob->finished_at =  date('Y-m-d H:i:s');
+                $renderJob->progress = 100;
+                $renderJob->message =  "The rendering job completed.";
+                // $outputName = uniqid() . '_' . pathinfo($content['outputUrls']['mainFile'], PATHINFO_BASENAME);
+                // if(!is_null($renderJob->output_name))
+                //     $outputName = $renderJob->output_name . '.' . pathinfo($content['outputUrls']['mainFile'], PATHINFO_EXTENSION);
+                // $targetOutputPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $renderJob->template_id . DIRECTORY_SEPARATOR . $outputName;
+                // Storage::disk('local')->copy($content['outputUrls']['mainFile'], $targetOutputPath);
+                // $renderJob->output_url = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $renderJob->template_id, 'fileName' => $outputName]);
+            }elseif($renderJob->status == 'error'){
+                $renderJob->finished_at =  date('Y-m-d H:i:s');
+                $renderJob->progress = 0;
+                $renderJob->message =  "The rendering job failed! Please try again or contact the support";
+            }
+
+            // Update the render job info
+            $renderJob->update();
+
+            // TODO: send notif to user
+
+            return response()->json(['status' => 'success', 'data' => $renderJob->toArray()]);
+        }
+
+        return response()->json(['status' => 'bad request', 'message' => "Bad request! please try again or contact support"], 400);
+    }
 
     /**
      * Notify the user about the render job directly after done

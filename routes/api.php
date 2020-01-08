@@ -48,9 +48,9 @@ Route::group(['middleware' => ['api', 'cors'], 'namespace' => 'API', 'prefix' =>
     // Get list of rendered jobs
     Route::get('/render/videos', 'RenderController@index');
     // Get job progress
-    Route::get('/status/{renderID}', 'RenderController@status')->name('job.status');
+    Route::get('/status/{renderID}', 'RenderController@statusV2')->name('job.status');
     // Notify after render job done by user
-    Route::get('/notify/{renderID}', 'CronController@notify')->where(['renderID' => '[0-9]+'])->name('cron.notify');
+    Route::get('/notify/{renderID}', 'CronController@notifyV2')->where(['renderID' => '[0-9]+'])->name('cron.notify');
     // Notify after render job done by VAU API callback
-    Route::post('/notify/{renderID}', 'CronController@vauNotify')->where(['renderID' => '[0-9]+'])->name('vau.notify');
+    // Route::post('/notify/{renderID}', 'CronController@vauNotify')->where(['renderID' => '[0-9]+'])->name('vau.notify');
 });

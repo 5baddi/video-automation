@@ -7,6 +7,7 @@ use App\CustomTemplate;
 use Gumlet\ImageResize;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\RenderJob;
 use Illuminate\Support\Facades\Storage;
 
 class CDNController extends Controller
@@ -27,6 +28,31 @@ class CDNController extends Controller
 
         // Check if already exists on the public disk
         $outputPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . strtolower($fileName);
+        $exists = Storage::disk('local')->exists($outputPath);
+        if(!$exists)
+            abort(404);
+
+        // Force downloading the file
+        return Storage::download($outputPath, strtolower($fileName));
+    }
+    
+    /**
+     * Download the generated video
+     *
+     * @param int $customTemplateID
+     * @param string $fileName
+     * @return Response
+     */
+    public function downloadOutputVideoV2(int $renderJobID, string $fileName)
+    {
+        // Check if the custom template is already exists
+        $renderJob = RenderJob::find($renderJobID);
+        if(is_null($renderJob))
+            abort(404);
+
+        // Check if already exists on the public disk
+        // $outputPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . strtolower($fileName);
+        $outputPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . strtolower($fileName);
         $exists = Storage::disk('local')->exists($outputPath);
         if(!$exists)
             abort(404);
@@ -97,6 +123,56 @@ class CDNController extends Controller
             $disk = "local";
         }
         $path .= DIRECTORY_SEPARATOR . $customTemplateID . DIRECTORY_SEPARATOR;
+        // if the collection is medias
+        if(in_array($collection, ['medias', 'defaults']))
+            $path .= $collection . DIRECTORY_SEPARATOR;
+        $path .= strtolower($fileName);
+
+        // Check file is exists
+        $exists = Storage::disk($disk)->exists($path);
+        if(!$exists)
+            abort(404);
+
+        // Get the image mime type also the content
+        $file = Storage::disk($disk)->get($path);
+        $path = Storage::disk($disk)->path($path);
+
+        // Force downloading the file
+        $action = $request->query('action');
+        if(!is_null($action) && $action == 'download')
+            return response()->download($path, strtolower($fileName), ['Content-Type' => mime_content_type($path)], 'inline');
+
+        // Show the thumbnail image
+        return response($file)->header('Content-Type', mime_content_type($path));
+    }
+    
+    /**
+     * Retrieve the custom template demo video
+     *
+     * @param string $collection
+     * @param int $customTemplateID
+     * @param string $fileName
+     * @return Response
+     */
+    public function retrieveCustomTemplateFilesV2(Request $request, string $collection, int $renderJobID, string $fileName)
+    {
+        $renderJob = RenderJob::find($renderJobID);
+        if(is_null($renderJob) && $collection != "demos")
+            abort(404);
+
+        // Disk
+        $disk = "public";
+
+        // Handle directory & disk
+        $path = AutomationApp::TEMPLATES_DIRECTORY_NAME;
+        if($collection == "outputs"){
+            $path = AutomationApp::OUTPUT_DIRECTORY_NAME;
+            $disk = "local";
+        }
+        // $path .= DIRECTORY_SEPARATOR . $renderJob->template_id . DIRECTORY_SEPARATOR . $renderJob->id . DIRECTORY_SEPARATOR;
+        $path .= DIRECTORY_SEPARATOR;
+        if($collection == "demos")
+            $path .= DIRECTORY_SEPARATOR . $renderJobID . DIRECTORY_SEPARATOR;
         // if the collection is medias
         if(in_array($collection, ['medias', 'defaults']))
             $path .= $collection . DIRECTORY_SEPARATOR;

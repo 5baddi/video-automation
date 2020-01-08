@@ -291,16 +291,16 @@ class RenderController extends Controller
 
             // Upload the attached files
             try{
-                // Render job unique name id
-                $uniqueID =  uniqid(date('dmy')) . '_';
-
                 // Handle the request media by template
                 foreach($customTemplate->medias()->get() as $media){
+                    // Render job unique name id
+                    $uniqueID =  uniqid(date('dmy')) . '_';
+
                     // Init current value
                     $value = null;
                     
                     // Handle Text footage
-                    if($media->type == TemplateMedia::TEXT_TYPE && !is_null($request->input($media->placeholder))){
+                    if($media->type == TemplateMedia::TEXT_TYPE && $request->has($media->placeholder)){
                         // Add Text to Footage
                         $footage[] = [
                             'type'      =>  'data',
@@ -311,7 +311,8 @@ class RenderController extends Controller
                     }
 
                     // Handle Image footage
-                    if($media->type == TemplateMedia::SCENE_TYPE && $request->hasFile($media->palceholder)){
+                    if($media->type == TemplateMedia::SCENE_TYPE && $request->has($media->placeholder)){
+                        // dd( $request->has($media->placeholder));
                         // Attached image
                         $fileName = $uniqueID . strtolower($request->file($media->placeholder)->getClientOriginalName());
                         $targetPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id;
@@ -326,7 +327,7 @@ class RenderController extends Controller
                         $footage[] = [
                             'type'      =>  TemplateMedia::SCENE_TYPE,
                             'src'       =>  ($value = $imageUrl),
-                            'layerName' =>  $media->palceholder
+                            'layerName' =>  $media->placeholder
                         ];
                     }
 
@@ -346,7 +347,13 @@ class RenderController extends Controller
             }
 
             // Final output name
-            $finalOutputName = strtolower(str_replace(' ', '_', $videoTitle)) . ".mp4";
+            $finalOutputName = strtolower(str_replace(' ', '_', $videoTitle)) . '_' . uniqid(date('dmy')) . ".mp4";
+
+            // TODO: Upload to render job directory
+            // Create the render job output folder
+            // $targetPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . $renderJob->id;
+            // if(!Storage::disk('local')->exists($targetPath))
+            //     Storage::disk('local')->makeDirectory($targetPath);
 
             // Re-form the body
             $videoData = [
@@ -363,9 +370,15 @@ class RenderController extends Controller
                             "output"    => $finalOutputName
                         ], 
                         [
-                            "module"    => "@nexrender/action-copy", 
-                            "input"     => $finalOutputName, 
-                            "output"    => \App\AutomationApp::DEFAULT_OUTPUT_DIRECTORY . $finalOutputName 
+                            "module"    =>  "@nexrender/action-upload", 
+                            "input"     =>  $finalOutputName,
+                            "provider"  =>  "ftp",
+                            "params"    =>  [
+                                "host"      =>  $_ENV['FTP_HOST'],
+                                "port"      =>  $_ENV['FTP_PORT'],
+                                "user"      =>  $_ENV['FTP_USER'],
+                                "password"  =>  $_ENV['FTP_PASSWORD']
+                            ]
                         ] 
                     ]
                     // TODO: upload video via FTP to V12 servers
@@ -374,7 +387,7 @@ class RenderController extends Controller
 
             // Init Guzzle client
             $headers = [
-                'Content-Type'  =>  'application/json',
+                // 'Content-Type'  =>  'application/json',
                 // 'X-AUTH-TOKEN'  =>  AutomationApp::ACCESS_TOKEN
                 "nexrender-secret"  =>  $_ENV['SERVER_SECRET']
             ];
@@ -392,6 +405,7 @@ class RenderController extends Controller
                 $content = json_decode($response->getBody()->getContents(), true);
 
                 // Update the render job infos
+                $renderJob->uid = $content['uid'];
                 $renderJob->status = $content['state'];
                 $renderJob->message = "The rendering job has been queued";
                 $renderJob->output_name = pathinfo($finalOutputName, PATHINFO_FILENAME);
@@ -402,9 +416,9 @@ class RenderController extends Controller
 
 
                 // Generate target output path
-                $targetOutputPath = AutomationApp::generateOutputPath($renderJob, $finalOutputName);
+                // $targetOutputPath = AutomationApp::generateOutputPath($renderJob, $finalOutputName);
                 // Set the render job local output url
-                $renderJob->output_url = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $renderJob->template_id, 'fileName' => pathinfo($targetOutputPath, PATHINFO_BASENAME)]);
+                $renderJob->output_url = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'renderJobID' => $renderJob->id, 'fileName' => pathinfo($finalOutputName, PATHINFO_BASENAME)]);
 
                 // Update render job
                 $renderJob->update();
@@ -467,6 +481,29 @@ class RenderController extends Controller
         // Refresh the render job details
         if($renderJob->status != 'done')
             return app(CronController::class)->notify($renderJob->id);
+
+        return response()->json(['status' => 'success', 'data' => $renderJob]);
+    }
+    
+    /**
+     * Get status of render job
+     *
+     * @param int $renderID
+     * @param string $action
+     * @return JsonResponse|BinaryFileResponse
+     */
+    public function statusV2(int $renderID)
+    {
+        // Fetch if this render job exists
+        $renderJob = RenderJob::find($renderID);
+        if(is_null($renderJob))
+            return response()->json(['status' => 'not found', 'message' => "Job does not exists!"], 404);
+        elseif(is_null($renderJob->uid))
+            return response()->json(['status' => 'bad request', 'message' => "Job requested not created yet!"], 400);
+
+        // Refresh the render job details
+        if($renderJob->status != 'done')
+            return app(CronController::class)->notifyV2($renderJob->id);
 
         return response()->json(['status' => 'success', 'data' => $renderJob]);
     }
