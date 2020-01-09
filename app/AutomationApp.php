@@ -25,9 +25,6 @@ class AutomationApp
         'square'        => ['width' => 1280, 'height' => 1280]
     ];
 
-    const DEFAULT_TEMPLATES_DIRECTORY = "file:///c:/Users/VA_V12/Desktop/templates/";
-    const DEFAULT_OUTPUT_DIRECTORY = "c:/Users/VA_V12/Desktop/outputs/";
-
     /**
      * Generate the render job output Path
      *

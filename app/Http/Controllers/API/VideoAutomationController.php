@@ -82,7 +82,7 @@ class VideoAutomationController extends Controller
         $rules = [
             // 'vau_id'        =>  'required|integer',
             'name'          =>  'required|string|between:1,100',
-            'rotation'      =>  'required|in:' . implode(',', CustomTemplate::ROTAIONS),
+            'rotation'      =>  'required|in:' . implode(',', CustomTemplate::SUPPORTED_ROTAIONS),
             'package'       =>  'nullable|string',
             'version'       =>  'nullable|string|between:1,25',
             'demo'          =>  'nullable|mimetypes:video/mp4,video/avi,video/mpeg,video/quicktime',
@@ -176,7 +176,7 @@ class VideoAutomationController extends Controller
         $rules = [
             'vau_id'        =>  'nullable|integer',
             'name'          =>  'nullable|string|between:1,100',
-            'rotation'      =>  'nullable|in:' . implode(',', CustomTemplate::ROTAIONS),
+            'rotation'      =>  'nullable|in:' . implode(',', CustomTemplate::SUPPORTED_ROTAIONS),
             'package'       =>  'nullable|string',
             'version'       =>  'nullable',
             'preview_path'  =>  'nullable|string',

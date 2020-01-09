@@ -7,9 +7,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TemplateMedia extends Model
 { 
-    const ALLOWED_TYPES = ["image", "text", "color", "audio"];
+    // Support footage types
+    const ALLOWED_TYPES = ["image", "text", "color", "audio", "video"];
     const SCENE_TYPE = self::ALLOWED_TYPES[0];
     const TEXT_TYPE = self::ALLOWED_TYPES[1];
+    const COLOR_TYPE = self::ALLOWED_TYPES[2];
+    const AUDIO_TYPE = self::ALLOWED_TYPES[3];
+    const VIDEO_TYPE = self::ALLOWED_TYPES[4];
 
     /**
      * The database table used by the model.

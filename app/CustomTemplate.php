@@ -7,7 +7,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CustomTemplate extends Model
 {
-    const ROTAIONS = ["square", "portrait", "landscape"];
+    // Support AE template rotations
+    const SUPPORTED_ROTAIONS = ["square", "portrait", "landscape"];
+
+    // Default templates path
+    const DEFAULT_TEMPLATES_PATH = "file:///c:/Users/VA_V12/Desktop/templates/";
+
     /**
      * The database table used by the model.
      *

@@ -314,7 +314,7 @@ class RenderController extends Controller
                     if($media->type == TemplateMedia::SCENE_TYPE && $request->hasFile($placeholder = str_replace('.', '_', $media->placeholder))){
                         // Attached image
                         $fileName = strtolower($request->file($placeholder)->getClientOriginalName());
-                        $targetPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $uniqueID;
+                        $targetPath = env('OUTPUT_DIRECTORY_NAME', AutomationApp::OUTPUT_DIRECTORY_NAME) . DIRECTORY_SEPARATOR . $uniqueID;
 
                         if(!Storage::disk('local')->exists($targetPath . DIRECTORY_SEPARATOR . $fileName))
                             $request->file($placeholder)->storeAs($targetPath, $fileName, 'local');
@@ -357,7 +357,7 @@ class RenderController extends Controller
             // Re-form the body
             $videoData = [
                 'template'  =>  [
-                    'src'           =>  \App\AutomationApp::DEFAULT_TEMPLATES_DIRECTORY . $customTemplate->id . '/' . $customTemplate->id . '.aep',
+                    'src'           =>  env('DEFAULT_TEMPLATES_DIRECTORY', CustomTemplate::DEFAULT_TEMPLATES_PATH) . $customTemplate->id . '/' . $customTemplate->id . '.aep',
                     'composition'   =>  'LANDSCAPE'
                 ],
                 'assets'    =>  $footage,
