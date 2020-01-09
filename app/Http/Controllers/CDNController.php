@@ -182,7 +182,7 @@ class CDNController extends Controller
     public function retrieveCustomTemplateFilesV2(Request $request, string $collection, int $renderJobID, string $fileName)
     {
         $renderJob = RenderJob::find($renderJobID);
-        if(is_null($renderJob) && $collection != "demos")
+        if(is_null($renderJob) && !in_array($collection, ['demos', 'defaults']))
             abort(404);
 
         // Disk
@@ -200,8 +200,8 @@ class CDNController extends Controller
             $path .= DIRECTORY_SEPARATOR . $renderJobID . DIRECTORY_SEPARATOR;
         // if the collection is medias
         if(in_array($collection, ['medias', 'defaults']))
-            $path .= $collection . DIRECTORY_SEPARATOR;
-        $path .= strtolower($fileName);
+            $path .= $renderJobID . DIRECTORY_SEPARATOR . $collection . DIRECTORY_SEPARATOR;
+        $path .= $fileName;
 
         // Check file is exists
         $exists = Storage::disk($disk)->exists($path);

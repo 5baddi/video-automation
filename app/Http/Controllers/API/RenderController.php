@@ -338,13 +338,14 @@ class RenderController extends Controller
 
                         // Resize image and add to footage
                         if(Storage::disk('local')->exists($targetPath . DIRECTORY_SEPARATOR . $fileName)){
-                            // Resize image to composition with rotation resolution
-                            $resolution = explode('x', env('DEFAULT_LANDSCAPE_RESOLUTION', CustomTemplate::DEFAULT_LANDSCAPE_RESOLUTION));
-                            if(sizeof($resolution) == 2){
+                            // Resize image to composition with rotation resolution to default footage
+                            list($defaultWidth, $defaultHeight) = getimagesize($media->default_value);
+                            list($width, $height) = getimagesize(Storage::disk('local')->path($targetPath . DIRECTORY_SEPARATOR . $fileName));
+                            // $resolution = explode('x', env('DEFAULT_LANDSCAPE_RESOLUTION', CustomTemplate::DEFAULT_LANDSCAPE_RESOLUTION));
+                            if($defaultWidth != $width || $defaultHeight != $height){
                                 $image = new ImageResize(Storage::disk('local')->path($targetPath . DIRECTORY_SEPARATOR . $fileName));
-                                $image->resize(intval($resolution[0]), intval($resolution[1]), true);
+                                $image->resize($defaultWidth, $defaultHeight, true);
                                 $image->save(Storage::disk('local')->path($targetPath . DIRECTORY_SEPARATOR . $fileName));
-                                dd(Storage::disk('local')->path($targetPath . DIRECTORY_SEPARATOR . $fileName));
                             }
 
                             // Relative url
