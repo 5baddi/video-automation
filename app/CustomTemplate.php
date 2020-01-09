@@ -9,6 +9,8 @@ class CustomTemplate extends Model
 {
     // Support AE template rotations
     const SUPPORTED_ROTAIONS = ["square", "portrait", "landscape"];
+    // Rotation default resolution
+    const DEFAULT_LANDSCAPE_RESOLUTION = "1920x1080";
 
     // Default templates path
     const DEFAULT_TEMPLATES_PATH = "file:///c:/Users/VA_V12/Desktop/templates/";

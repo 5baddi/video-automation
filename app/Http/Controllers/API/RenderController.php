@@ -7,6 +7,7 @@ use App\AutomationApp;
 use App\TemplateMedia;
 use App\CustomTemplate;
 use App\RenderJobMedia;
+use Gumlet\ImageResize;
 use Illuminate\Http\Request;
 use GuzzleHttp\RequestOptions;
 use Illuminate\Http\JsonResponse;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\API\CronController;
 use GuzzleHttp\Exception\BadResponseException;
+use Illuminate\Contracts\Validation\Validator as ValidationValidator;
 
 class RenderController extends Controller
 {
@@ -312,6 +314,15 @@ class RenderController extends Controller
 
                     // Handle Image footage
                     if($media->type == TemplateMedia::SCENE_TYPE && $request->hasFile($placeholder = str_replace('.', '_', $media->placeholder))){
+                        // Validate the footage
+                        $rules = [
+                            $placeholder    =>  'nullable|mimes:jpg,jpeg,bmp,png,gif,audio/mpeg,mpga,mp3,wav',
+                        ];
+                        $validation = Validator::make([$request->file($placeholder)], $rules);
+                        // Ignore not valid format for the current footage
+                        if($validation->fails())
+                            continue;
+                        
                         // Attached image
                         $fileName = strtolower($request->file($placeholder)->getClientOriginalName());
                         $targetPath = env('OUTPUT_DIRECTORY_NAME', AutomationApp::OUTPUT_DIRECTORY_NAME) . DIRECTORY_SEPARATOR . $uniqueID;
@@ -319,15 +330,26 @@ class RenderController extends Controller
                         if(!Storage::disk('local')->exists($targetPath . DIRECTORY_SEPARATOR . $fileName))
                             $request->file($placeholder)->storeAs($targetPath, $fileName, 'local');
 
-                        // Relative url TODO: load default image if not exists
-                        $imageUrl = route('cdn.cutomTemplate.footage', ['uid' => $uniqueID, 'fileName' => $fileName]);
+                        // Resize image and add to footage
+                        if(Storage::disk('local')->exists($targetPath . DIRECTORY_SEPARATOR . $fileName)){
+                            // Resize image to composition with rotation resolution
+                            $resolution = explode('x', env('DEFAULT_LANDSCAPE_RESOLUTION', CustomTemplate::DEFAULT_LANDSCAPE_RESOLUTION));
+                            if(sizeof($resolution) == 2){
+                                $image = new ImageResize(Storage::disk('local')->path($targetPath . DIRECTORY_SEPARATOR . $fileName));
+                                $image->resize(intval($resolution[0]), intval($resolution[1]), true);
+                                $image->save(Storage::disk('local')->path($targetPath . DIRECTORY_SEPARATOR . $fileName));
+                            }
 
-                        // Add Image to Footage
-                        $footage[] = [
-                            'type'      =>  TemplateMedia::SCENE_TYPE,
-                            'src'       =>  ($value = $imageUrl),
-                            'layerName' =>  $media->placeholder
-                        ];
+                            // Relative url
+                            $imageUrl = route('cdn.cutomTemplate.footage', ['uid' => $uniqueID, 'fileName' => $fileName]);
+
+                            // Add Image to Footage
+                            $footage[] = [
+                                'type'      =>  TemplateMedia::SCENE_TYPE,
+                                'src'       =>  ($value = $imageUrl),
+                                'layerName' =>  $media->placeholder
+                            ];
+                        }
                     }
 
                     // Save render job media

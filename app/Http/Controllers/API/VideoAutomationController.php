@@ -319,7 +319,7 @@ class VideoAutomationController extends Controller
             'default_value'=>  'nullable|string',
             'position'     =>  'nullable|integer',
             'thumbnail_url'=>  'nullable|mimes:jpg,jpeg,bmp,png,gif',
-            'default'      =>  'nullable|mimes:jpg,jpeg,bmp,png,gif,mpga,wav,audio/mpeg,audio/mp3',
+            'default'      =>  'nullable|mimes:jpg,jpeg,bmp,png,gif,audio/mpeg,mpga,mp3,wav',
             // 'updated_at'    =>  'datetime:Y-m-d H:i:s',
             // 'created_at'    =>  'datetime:Y-m-d H:i:s',
         ];
