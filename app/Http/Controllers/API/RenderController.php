@@ -312,7 +312,6 @@ class RenderController extends Controller
 
                     // Handle Image footage
                     if($media->type == TemplateMedia::SCENE_TYPE && $request->has($media->placeholder)){
-                        // dd( $request->has($media->placeholder));
                         // Attached image
                         $fileName = $uniqueID . strtolower($request->file($media->placeholder)->getClientOriginalName());
                         $targetPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id;
