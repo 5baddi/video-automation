@@ -6,6 +6,7 @@ use App\RenderJob;
 use App\AutomationApp;
 use App\TemplateMedia;
 use App\CustomTemplate;
+use App\RenderJobMedia;
 use Illuminate\Http\Request;
 use GuzzleHttp\RequestOptions;
 use Illuminate\Http\JsonResponse;
@@ -14,7 +15,6 @@ use GuzzleHttp\Client as GuzzleClient;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\API\CronController;
-use App\RenderJobMedia;
 use GuzzleHttp\Exception\BadResponseException;
 
 class RenderController extends Controller
@@ -300,7 +300,7 @@ class RenderController extends Controller
                     $value = null;
                     
                     // Handle Text footage
-                    if($media->type == TemplateMedia::TEXT_TYPE && $request->has($media->placeholder)){
+                    if($media->type == TemplateMedia::TEXT_TYPE){
                         // Add Text to Footage
                         $footage[] = [
                             'type'      =>  'data',
@@ -311,13 +311,13 @@ class RenderController extends Controller
                     }
 
                     // Handle Image footage
-                    if($media->type == TemplateMedia::SCENE_TYPE && $request->has($media->placeholder)){
+                    if($media->type == TemplateMedia::SCENE_TYPE && $request->hasFile($placeholder = str_replace('.', '_', $media->placeholder))){
                         // Attached image
-                        $fileName = $uniqueID . strtolower($request->file($media->placeholder)->getClientOriginalName());
+                        $fileName = $uniqueID . strtolower($request->file($placeholder)->getClientOriginalName());
                         $targetPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id;
 
                         if(!Storage::disk('local')->exists($targetPath . DIRECTORY_SEPARATOR . $fileName))
-                            $request->file($media->placeholder)->storeAs($targetPath, $fileName, 'local');
+                            $request->file($placeholder)->storeAs($targetPath, $fileName, 'local');
 
                         // Relative url TODO: load default image if not exists
                         $imageUrl = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $media->template_id, 'fileName' => $fileName]);
