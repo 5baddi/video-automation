@@ -149,12 +149,11 @@ class CDNController extends Controller
     /**
      * Retrieve footage element
      *
-     * @param Request $request
      * @param string $uid
      * @param string $fileName
      * @return Response
      */
-    public function retrieveFootage(Request $request, string $uid, string $fileName)
+    public function retrieveFootage(string $uid, string $fileName)
     {
         // Footage path
         $path = env('OUTPUT_DIRECTORY_NAME', AutomationApp::OUTPUT_DIRECTORY_NAME) . DIRECTORY_SEPARATOR . $uid . DIRECTORY_SEPARATOR . $fileName;
