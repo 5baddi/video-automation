@@ -303,6 +303,13 @@ class RenderController extends Controller
                     
                     // Handle Text footage
                     if($media->type == TemplateMedia::TEXT_TYPE && $request->has($media->placeholder)){
+                        // Validate the text
+                        $validation = Validator::make([$media->placeholder => $request->input($media->placeholder)], [
+                            $media->placeholder  =>  'string' 
+                         ]);
+                         // Ignore not valid text for the current footage
+                         if($validation->fails())
+                             continue;
                         // Add Text to Footage
                         $footage[] = [
                             'type'      =>  'data',
@@ -315,10 +322,9 @@ class RenderController extends Controller
                     // Handle Image footage
                     if($media->type == TemplateMedia::SCENE_TYPE && $request->hasFile($placeholder = str_replace('.', '_', $media->placeholder))){
                         // Validate the footage
-                        $rules = [
+                        $validation = Validator::make([$placeholder => $request->file($placeholder)], [
                             $placeholder    =>  'nullable|mimes:jpg,jpeg,bmp,png,gif,audio/mpeg,mpga,mp3,wav',
-                        ];
-                        $validation = Validator::make([$request->file($placeholder)], $rules);
+                        ]);
                         // Ignore not valid format for the current footage
                         if($validation->fails())
                             continue;
@@ -352,6 +358,25 @@ class RenderController extends Controller
                         }
                     }
 
+                    // Handle Text color
+                    if($media->type == TemplateMedia::COLOR_TYPE && $request->has($media->placeholder)){
+                        continue; // TODO: still working on it
+                        // Validate the color syntax
+                        $validation = Validator::make([$media->placeholder => $request->input($media->placeholder)], [
+                           $media->placeholder  =>  'regex:/^(#(?:[0-9a-f]{2}){2,4}|#[0-9a-f]{3}|(?:rgba?|hsla?)\((?:\d+%?(?:deg|rad|grad|turn)?(?:,|\s)+){2,3}[\s\/]*[\d\.]+%?\))$/i' 
+                        ]);
+                        // Ignore not valid color syntax for the current footage
+                        if($validation->fails())
+                            continue;
+
+                        // Add Text color to Footage
+                        $footage[] = [
+                            'type'      =>  'data',
+                            'src'       =>  ($value = ''),
+                            'layerName' =>  $media->placeholder
+                        ];
+                    }
+
                     // Save render job media
                     if(!is_null($value)){
                         // Store media to render job history
@@ -369,12 +394,6 @@ class RenderController extends Controller
 
             // Final output name
             $finalOutputName = strtolower(str_replace(' ', '_', $videoTitle)) . '_' . uniqid(date('dmy')) . ".mp4";
-
-            // TODO: Upload to render job directory
-            // Create the render job output folder
-            // $targetPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . $renderJob->id;
-            // if(!Storage::disk('local')->exists($targetPath))
-            //     Storage::disk('local')->makeDirectory($targetPath);
 
             // Re-form the body
             $videoData = [
