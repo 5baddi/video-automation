@@ -300,7 +300,7 @@ class RenderController extends Controller
                     $value = null;
                     
                     // Handle Text footage
-                    if($media->type == TemplateMedia::TEXT_TYPE){
+                    if($media->type == TemplateMedia::TEXT_TYPE && $request->has($media->placeholder)){
                         // Add Text to Footage
                         $footage[] = [
                             'type'      =>  'data',
