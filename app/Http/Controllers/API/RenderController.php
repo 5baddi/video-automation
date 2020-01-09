@@ -330,7 +330,7 @@ class RenderController extends Controller
                             continue;
                         
                         // Attached image
-                        $fileName = strtolower($request->file($placeholder)->getClientOriginalName());
+                        $fileName = strtolower(str_replace(' ', '_', $request->file($placeholder)->getClientOriginalName()));
                         $targetPath = env('OUTPUT_DIRECTORY_NAME', AutomationApp::OUTPUT_DIRECTORY_NAME) . DIRECTORY_SEPARATOR . $uniqueID;
 
                         if(!Storage::disk('local')->exists($targetPath . DIRECTORY_SEPARATOR . $fileName))
@@ -344,6 +344,7 @@ class RenderController extends Controller
                                 $image = new ImageResize(Storage::disk('local')->path($targetPath . DIRECTORY_SEPARATOR . $fileName));
                                 $image->resize(intval($resolution[0]), intval($resolution[1]), true);
                                 $image->save(Storage::disk('local')->path($targetPath . DIRECTORY_SEPARATOR . $fileName));
+                                dd(Storage::disk('local')->path($targetPath . DIRECTORY_SEPARATOR . $fileName));
                             }
 
                             // Relative url
