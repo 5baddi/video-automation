@@ -408,7 +408,7 @@ class VideoAutomationController extends Controller
         $templateMedia->save();
 
         // Return the done response
-        return response()->json(['status' => 'success', 'media_id' => $templateMedia->id, 'message' => "The medias has been added successfully."]);
+        return response()->json(['status' => 'success', 'message' => "The medias has been added successfully.", 'id' => $templateMedia->id, 'url' => $templateMedia->thumbnail_url]);
     }
 
     /**
