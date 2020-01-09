@@ -28,4 +28,6 @@ Route::group(['middleware' => 'cors', 'prefix' => 'cdn'], function () {
     Route::get('/thumbnails/{customTemplateID}/{fileName}/{width?}/{height?}', 'CDNController@retrieveCustomTemplateThumbnail')->where(['customTemplateID' => '[0-9]+', 'width' => '[0-9]+', 'height' => '[0-9]+'])->name('cdn.thumbnail');
     // Retrieve the custom template demo video
     Route::get('/{collection}/{renderJobID}/{fileName}', 'CDNController@retrieveCustomTemplateFilesV2')->where(['renderJobID' => '[0-9]+'])->name('cdn.cutomTemplate.files');
+    // Retrieve a footage for a render job
+    Route::get('/footage/{uid}/{fileName}', 'CDNController@retrieveFootage')->name('cdn.cutomTemplate.footage');
 });

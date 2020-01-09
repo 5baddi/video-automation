@@ -291,11 +291,11 @@ class RenderController extends Controller
 
             // Upload the attached files
             try{
+                // Render job unique name id
+                $uniqueID =  uniqid(date('dmy')) . '_';
+
                 // Handle the request media by template
                 foreach($customTemplate->medias()->get() as $media){
-                    // Render job unique name id
-                    $uniqueID =  uniqid(date('dmy')) . '_';
-
                     // Init current value
                     $value = null;
                     
@@ -313,14 +313,14 @@ class RenderController extends Controller
                     // Handle Image footage
                     if($media->type == TemplateMedia::SCENE_TYPE && $request->hasFile($placeholder = str_replace('.', '_', $media->placeholder))){
                         // Attached image
-                        $fileName = $uniqueID . strtolower($request->file($placeholder)->getClientOriginalName());
-                        $targetPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id;
+                        $fileName = strtolower($request->file($placeholder)->getClientOriginalName());
+                        $targetPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $uniqueID;
 
                         if(!Storage::disk('local')->exists($targetPath . DIRECTORY_SEPARATOR . $fileName))
                             $request->file($placeholder)->storeAs($targetPath, $fileName, 'local');
 
                         // Relative url TODO: load default image if not exists
-                        $imageUrl = route('cdn.cutomTemplate.files', ['collection' =>  'outputs', 'customTemplateID' => $media->template_id, 'fileName' => $fileName]);
+                        $imageUrl = route('cdn.cutomTemplate.footage', ['uid' => $uniqueID, 'fileName' => $fileName]);
 
                         // Add Image to Footage
                         $footage[] = [

@@ -147,6 +147,32 @@ class CDNController extends Controller
     }
     
     /**
+     * Retrieve footage element
+     *
+     * @param Request $request
+     * @param string $uid
+     * @param string $fileName
+     * @return Response
+     */
+    public function retrieveFootage(Request $request, string $uid, string $fileName)
+    {
+        // Footage path
+        $path = env('OUTPUT_DIRECTORY_NAME', AutomationApp::OUTPUT_DIRECTORY_NAME) . DIRECTORY_SEPARATOR . $uid . DIRECTORY_SEPARATOR . $fileName;
+
+        // Check file is exists
+        $exists = Storage::disk('local')->exists($path);
+        if(!$exists)
+            abort(404);
+
+        // Get the image mime type also the content
+        $file = Storage::disk('local')->get($path);
+        $path = Storage::disk('local')->path($path);
+
+        // Send footage as content header
+        return response($file)->header('Content-Type', mime_content_type($path));
+    }
+    
+    /**
      * Retrieve the custom template demo video
      *
      * @param string $collection
