@@ -15,7 +15,7 @@ class RenderJob extends Model
      *
      * @var string
      */
-    protected $table = "render_jobs";
+    protected $table = "jobs";
 
     /**
      * The attributes that are mass assignable.
@@ -23,6 +23,7 @@ class RenderJob extends Model
      * @var array
      */
     protected $fillable = [
+        'uid',
         'status',
         'message',
         'output_name',
@@ -36,10 +37,8 @@ class RenderJob extends Model
      */
     protected $casts = [
         'template_id'   => 'integer',
-        'vau_job_id'    => 'integer',
         'user_id'       => 'integer',
         'progress'      => 'integer',
-        'left_seconds'  => 'integer',
         'finished_at'   => 'datetime',
     ];
 
@@ -60,6 +59,6 @@ class RenderJob extends Model
      */
     public function mediasHistory() : HasMany
     {
-        return $this->hasMany(RenderJobMedia::class, 'render_job_id');
+        return $this->hasMany(RenderJobMedia::class, 'job_id');
     }
 }

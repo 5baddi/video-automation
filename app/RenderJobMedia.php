@@ -12,7 +12,7 @@ class RenderJobMedia extends Model
      *
      * @var string
      */
-    protected $table = "render_job_medias";
+    protected $table = "job_medias";
 
     /**
      * The attributes that are mass assignable.
@@ -29,7 +29,7 @@ class RenderJobMedia extends Model
      * @var array
      */
     protected $casts = [
-        'render_job_id' => 'integer',
+        'job_id' => 'integer',
         'media_id'      => 'integer',
     ];
 

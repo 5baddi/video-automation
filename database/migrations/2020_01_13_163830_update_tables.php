@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class VideosAutomation extends Migration
+class UpdateTables extends Migration
 {
     /**
      * Run the migrations.
@@ -14,16 +14,12 @@ class VideosAutomation extends Migration
     public function up()
     {
         // Custom templates
-        Schema::create('custom_templates', function (Blueprint $table) {
+        Schema::create('templates', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->bigInteger('vau_id')->nullable(false);
             $table->string('name')->unique()->nullable(false);
-            $table->string('package')->nullable();
-            $table->string('version')->nullable();
             $table->string('rotation')->default('square');
             $table->string('preview_url')->nullable();
             $table->string('thumbnail_url')->nullable();
-            $table->string('gif_url')->nullable();
             $table->smallInteger('enabled')->default(1);
             $table->timestamps();
         });
@@ -44,26 +40,25 @@ class VideosAutomation extends Migration
         });
 
         // Render jobs
-        Schema::create('render_jobs', function (Blueprint $table) {
+        Schema::create('jobs', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('template_id');
-            $table->unsignedBigInteger('vau_job_id')->unique()->nullable();
             $table->unsignedBigInteger('user_id')->nullable();
+            $table->string('uid')->unique();
             $table->string('status')->default('queued');
             $table->string('message')->default(null);
             $table->string('output_name')->default(null);
             $table->string('output_url')->default(null);
             $table->integer('progress')->default(0);
-            $table->integer('left_seconds')->default(0);
             $table->foreign('template_id')->references('id')->on('custom_templates');
             $table->timestamps();
             $table->timestamp('finished_at')->nullable();
         });
 
         // Render medias
-        Schema::create('render_job_medias', function (Blueprint $table) {
+        Schema::create('job_medias', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->unsignedBigInteger('render_job_id')->unqiue();
+            $table->unsignedBigInteger('job_id')->unqiue();
             $table->unsignedBigInteger('media_id')->nullable(false);
             $table->string('value')->nullable(false);
             $table->timestamps();
@@ -77,9 +72,9 @@ class VideosAutomation extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('custom_templates');
+        Schema::dropIfExists('templates');
         Schema::dropIfExists('template_medias');
-        Schema::dropIfExists('render_jobs');
-        Schema::dropIfExists('render_job_medias');
+        Schema::dropIfExists('jobs');
+        Schema::dropIfExists('job_medias');
     }
 }
