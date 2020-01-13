@@ -338,8 +338,13 @@ class RenderController extends Controller
 
                         // Resize image and add to footage
                         if(Storage::disk('local')->exists($targetPath . DIRECTORY_SEPARATOR . $fileName)){
+                            // Get default Image url
+                            $defaultImageUrl = !is_null($media->default_value) ? $media->default_value : $media->thumbnail_url;
+                            if(is_null($defaultImageUrl))
+                                continue;
+
                             // Resize image to composition with rotation resolution to default footage
-                            list($defaultWidth, $defaultHeight) = getimagesize($media->default_value);
+                            list($defaultWidth, $defaultHeight) = getimagesize($defaultImageUrl);
                             list($width, $height) = getimagesize(Storage::disk('local')->path($targetPath . DIRECTORY_SEPARATOR . $fileName));
                             // $resolution = explode('x', env('DEFAULT_LANDSCAPE_RESOLUTION', CustomTemplate::DEFAULT_LANDSCAPE_RESOLUTION));
                             if($defaultWidth != $width || $defaultHeight != $height){
@@ -395,21 +400,28 @@ class RenderController extends Controller
             }
 
             // Final output name
-            $finalOutputName = strtolower(str_replace(' ', '_', $videoTitle)) . '_' . uniqid(date('dmy')) . ".mp4";
+            $finalOutputName = strtolower(str_replace([' ', '#'], '_', $videoTitle)) . '_' . uniqid(date('dmy')) . ".mp4";
 
             // Re-form the body
             $videoData = [
-                'template'  =>  [
-                    'src'           =>  env('DEFAULT_TEMPLATES_DIRECTORY', CustomTemplate::DEFAULT_TEMPLATES_PATH) . $customTemplate->id . '/' . $customTemplate->id . '.aep',
-                    'composition'   =>  'LANDSCAPE'
+                "template"  =>  [
+                    "src"               =>  env('DEFAULT_TEMPLATES_DIRECTORY', CustomTemplate::DEFAULT_TEMPLATES_PATH) . $customTemplate->id . '/' . $customTemplate->id . '.aep',
+                    "composition"       =>  "LANDSCAPE",
+                    "settingsTemplate"  =>  "Best Settings",
+                    "outputModule"      =>  "Lossless",
+                    "continueOnMissing" =>  true
                 ],
-                'assets'    =>  $footage,
-                'actions'   =>  [
-                    'postrender'    =>  [
+                "assets"    =>  $footage,
+                "actions"   =>  [
+                    "postrender"    =>  [
                         [
                             "module"    => "@nexrender/action-encode", 
                             "preset"    => "mp4", 
-                            "output"    => $finalOutputName
+                            "output"    => $finalOutputName,
+                            "params"    =>  [
+                                "-vcodec"   =>  "libx264",
+                                "-r"        =>  25
+                            ]
                         ], 
                         [
                             "module"    =>  "@nexrender/action-upload", 

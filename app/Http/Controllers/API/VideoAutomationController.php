@@ -125,21 +125,21 @@ class VideoAutomationController extends Controller
                 
                 // Upload the demo video
                 if($request->hasFile('demo')){
-                    $demoFileName = strtolower(str_replace(' ', '_', $customTemplate->name)) . '.' . $request->file('demo')->getClientOriginalExtension();
+                    $demoFileName = strtolower(str_replace([' ','#'], '_', $customTemplate->name)) . '.' . $request->file('demo')->getClientOriginalExtension();
                     $request->file('demo')->storeAs($targetTemplatePath, $demoFileName, 'public');
                     $customTemplate->preview_url = route('cdn.cutomTemplate.files', ['collection' =>  'demos', 'customTemplateID' => $customTemplate->id, 'fileName' => $demoFileName]);
                 }
                 
                 // Upload the thumbnail
                 if($request->hasFile('thumbnail')){
-                    $thumbnailFileName = strtolower(str_replace(' ', '_', $customTemplate->name)) . '.' . $request->file('thumbnail')->getClientOriginalExtension();
+                    $thumbnailFileName = strtolower(str_replace([' ','#'], '_', $customTemplate->name)) . '.' . $request->file('thumbnail')->getClientOriginalExtension();
                     $customTemplate->thumbnail_url = route('cdn.cutomTemplate.files', ['collection' =>  'thumbnails', 'customTemplateID' => $customTemplate->id, 'fileName' => $thumbnailFileName]);
                     $request->file('thumbnail')->storeAs($targetTemplatePath, $thumbnailFileName, 'public');
                 }
                 
                 // Upload the gif
                 if($request->hasFile('gif')){
-                    $gifFileName = strtolower(str_replace(' ', '_', $customTemplate->name)) . '.' . $request->file('gif')->getClientOriginalExtension();
+                    $gifFileName = strtolower(str_replace([' ','#'], '_', $customTemplate->name)) . '.' . $request->file('gif')->getClientOriginalExtension();
                     $customTemplate->gif_url = route('cdn.cutomTemplate.files', ['collection' =>  'thumbnails', 'customTemplateID' => $customTemplate->id, 'fileName' => $gifFileName]);
                     $request->file('gif')->storeAs($targetTemplatePath, $gifFileName, 'public');
                 }
@@ -408,7 +408,7 @@ class VideoAutomationController extends Controller
         $templateMedia->save();
 
         // Return the done response
-        return response()->json(['status' => 'success', 'message' => "The medias has been added successfully.", 'id' => $templateMedia->id, 'url' => $templateMedia->thumbnail_url]);
+        return response()->json(['status' => 'success', 'message' => "The medias has been added successfully.", 'id' => $templateMedia->id, 'url' => $templateMedia->default_value]);
     }
 
     /**

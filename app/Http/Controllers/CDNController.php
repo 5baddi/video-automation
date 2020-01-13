@@ -52,7 +52,7 @@ class CDNController extends Controller
 
         // Check if already exists on the public disk
         // $outputPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . strtolower($fileName);
-        $outputPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . strtolower($fileName);
+        $outputPath = AutomationApp::OUTPUT_DIRECTORY_NAME . DIRECTORY_SEPARATOR . pathinfo($renderJob->output_url, PATHINFO_BASENAME);
         $exists = Storage::disk('local')->exists($outputPath);
         if(!$exists)
             abort(404);
@@ -182,7 +182,7 @@ class CDNController extends Controller
     public function retrieveCustomTemplateFilesV2(Request $request, string $collection, int $renderJobID, string $fileName)
     {
         $renderJob = RenderJob::find($renderJobID);
-        if(is_null($renderJob) && !in_array($collection, ['demos', 'defaults']))
+        if(is_null($renderJob) && !in_array($collection, ['demos', 'defaults', 'medias']))
             abort(404);
 
         // Disk
