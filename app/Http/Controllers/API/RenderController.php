@@ -321,9 +321,11 @@ class RenderController extends Controller
 
                     // Handle Image footage
                     if($media->type == TemplateMedia::SCENE_TYPE && $request->hasFile($placeholder = str_replace('.', '_', $media->placeholder))){
+                        
                         // Validate the footage
                         $validation = Validator::make([$placeholder => $request->file($placeholder)], [
-                            $placeholder    =>  'nullable|mimes:jpg,jpeg,bmp,png,gif,audio/mpeg,mpga,mp3,wav',
+                            // $placeholder    =>  'nullable|mimes:jpg,jpeg,bmp,png,gif,audio/mpeg,mpga,mp3,wav',
+                            $placeholder    =>  'nullable|mimes:' . (isset($media->format) ? $media->format : 'jpg,jpeg,bmp,png,gif,audio/mpeg,mpga,mp3,wav'),
                         ]);
                         // Ignore not valid format for the current footage
                         if($validation->fails())

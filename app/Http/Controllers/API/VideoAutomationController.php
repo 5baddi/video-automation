@@ -334,11 +334,19 @@ class VideoAutomationController extends Controller
         if(is_null($customTemplate))
             return response()->json(['status' => 'not found', 'message' => "The requested template does not exists!"], 404);
 
+        // Parse the placeholder
+        $placeholder = str_replace([' ', '[', ']', '(', ')', '#'], '_', $media['placeholder']);
+
+        // Ignore exists media
+        $existsTemplateMedia = TemplateMedia::where(['template_id' => $customTemplate->id, 'placeholder' => $placeholder]);
+        if(!is_null($existsTemplateMedia))
+            return response()->json(['status' => 'bad request', 'message' => 'This media already exists for this template!'], 400);
+
         // Add the template medias
         $templateMedia = new TemplateMedia();
         $templateMedia->template_id = $customTemplate->id;
         $templateMedia->scene = $media['scene'];
-        $templateMedia->placeholder = str_replace(' ', '_', $media['placeholder']);
+        $templateMedia->placeholder = $placeholder;
         $templateMedia->type = isset($media['type']) ? $media['type'] : TemplateMedia::SCENE_TYPE;
         
         // Text color
@@ -355,7 +363,7 @@ class VideoAutomationController extends Controller
         }
 
         // Text default value
-        if(isset($media['default_value']) && $templateMedia->type != TemplateMedia::SCENE_TYPE){
+        if(isset($media['default_value']) && !in_array($templateMedia->type, ['image', 'audio', 'video'])){
             $templateMedia->default_value = $media['default_value'];
         }
         // Copy the remote default value to local
@@ -374,9 +382,10 @@ class VideoAutomationController extends Controller
 
             // Set the default value url
             $templateMedia->default_value = route('cdn.cutomTemplate.files', ['collection' =>  'defaults', 'customTemplateID' => $customTemplate->id, 'fileName' => $fileName]);
+            $templateMedia->format = pathinfo($templateMedia->default_value, PATHINFO_EXTENSION);
         }
         // Upload default value
-        elseif($request->hasFile('default')){
+        elseif($request->hasFile('default') && in_array($templateMedia->type, ['image', 'audio', 'video'])){
             try{
                 // Parse the target path and file names
                 $targetTemplatePath = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . 'defaults';
@@ -385,25 +394,26 @@ class VideoAutomationController extends Controller
                 // Upload the demo video
                 $request->file('default')->storeAs($targetTemplatePath, $defaultFileName, 'public');
                 $templateMedia->default_value = route('cdn.cutomTemplate.files', ['collection' =>  'defaults', 'customTemplateID' => $customTemplate->id, 'fileName' => $defaultFileName]);
+                $templateMedia->format = pathinfo($templateMedia->default_value, PATHINFO_EXTENSION);
             }catch(\Exception $ex){
                 throw new \Exception("Media thumbnail are not allowed or damaged!");
             }
         }
 
         // Upload media preview
-        if($request->hasFile('thumbnail')){
-            try{
-                // Parse the target path and file names
-                $targetTemplatePath = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . 'medias';
-                $mediaFileName = uniqid() . '_' . $request->file('thumbnail')->getClientOriginalName();
+        // if($request->hasFile('thumbnail')){
+        //     try{
+        //         // Parse the target path and file names
+        //         $targetTemplatePath = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . 'medias';
+        //         $mediaFileName = uniqid() . '_' . $request->file('thumbnail')->getClientOriginalName();
                 
-                // Upload the demo video
-                $request->file('thumbnail')->storeAs($targetTemplatePath, $mediaFileName, 'public');
-                $templateMedia->thumbnail_url = route('cdn.cutomTemplate.files', ['collection' =>  'medias', 'customTemplateID' => $customTemplate->id, 'fileName' => $mediaFileName]);
-            }catch(\Exception $ex){
-                throw new \Exception("Media thumbnail are not allowed or damaged!");
-            }
-        }
+        //         // Upload the demo video
+        //         $request->file('thumbnail')->storeAs($targetTemplatePath, $mediaFileName, 'public');
+        //         $templateMedia->thumbnail_url = route('cdn.cutomTemplate.files', ['collection' =>  'medias', 'customTemplateID' => $customTemplate->id, 'fileName' => $mediaFileName]);
+        //     }catch(\Exception $ex){
+        //         throw new \Exception("Media thumbnail are not allowed or damaged!");
+        //     }
+        // }
 
         $templateMedia->save();
 

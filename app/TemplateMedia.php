@@ -30,6 +30,7 @@ class TemplateMedia extends Model
     protected $fillable = [
         'placeholder',
         'type',
+        'format',
         'color',
         'default_value',
         'thumbnail_url'
