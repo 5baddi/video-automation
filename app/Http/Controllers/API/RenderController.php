@@ -330,7 +330,7 @@ class RenderController extends Controller
                             continue;
                         
                         // Attached image
-                        $fileName = strtolower(str_replace(' ', '_', $request->file($placeholder)->getClientOriginalName()));
+                        $fileName = strtolower(str_replace([' ', '(', ')', '[', ']', '#', '@'], '_', $request->file($placeholder)->getClientOriginalName()));
                         $targetPath = env('OUTPUT_DIRECTORY_NAME', AutomationApp::OUTPUT_DIRECTORY_NAME) . DIRECTORY_SEPARATOR . $uniqueID;
 
                         if(!Storage::disk('local')->exists($targetPath . DIRECTORY_SEPARATOR . $fileName))
