@@ -13,7 +13,8 @@
 
 // Redirect to the Vue App
 // Route::permanentRedirect ('/', '/app');
-Route::permanentRedirect ('/', '/api');
+// Route::permanentRedirect ('/', '/api');
+Route::permanentRedirect ('/', '/dashboard');
 
 // Vue App
 // Route::group(['prefix' => 'app'], function () {
@@ -30,4 +31,12 @@ Route::group(['middleware' => 'cors', 'prefix' => 'cdn'], function () {
     Route::get('/{collection}/{renderJobID}/{fileName}', 'CDNController@retrieveCustomTemplateFilesV2')->where(['renderJobID' => '[0-9]+'])->name('cdn.cutomTemplate.files');
     // Retrieve a footage for a render job
     Route::get('/footage/{uid}/{fileName}', 'CDNController@retrieveFootage')->name('cdn.cutomTemplate.footage');
+});
+
+Auth::routes();
+
+// Dashboard
+Route::group(['middleware' => 'auth', 'prefix' => 'dashboard'], function () {
+    // Home
+    Route::get('/', 'DashboardController@index')->name('dashboard');
 });

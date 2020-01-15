@@ -20,7 +20,7 @@ class CustomTemplate extends Model
      *
      * @var string
      */
-    protected $table = "custom_templates";
+    protected $table = "templates";
 
     /**
      * The attributes that are mass assignable.
@@ -29,23 +29,11 @@ class CustomTemplate extends Model
      */
     protected $fillable = [
         'name',
-        'package',
-        'version',
         'rotation',
         'preview_url',
-        'thumbnail_url',
-        'gif_url'
+        'thumbnail_url'
     ];
-
-    /**
-     * The attributes that should be cast to native types.
-     *
-     * @var array
-     */
-    protected $casts = [
-        'vau_id'   => 'integer',
-    ];
-
+    
     /**
      * Retrive render jobs
      *
