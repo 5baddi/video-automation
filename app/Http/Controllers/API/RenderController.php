@@ -422,7 +422,8 @@ class RenderController extends Controller
                             "output"    => $finalOutputName,
                             "params"    =>  [
                                 "-vcodec"   =>  "libx264",
-                                "-r"        =>  30
+                                "-r"        =>  25,
+                                "-preset"   =>  "ultrafast"
                             ]
                         ], 
                         [
