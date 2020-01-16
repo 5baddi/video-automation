@@ -111,7 +111,8 @@ class CronController extends Controller
 
             // Update render job
             $renderJob->status = $content['state'];
-            $renderJob->progress = isset($content['progress']) ? $content['progress'] : 0;
+            if(isset($content['renderProgress']))
+                $renderJob->progress = $content['renderProgress'];
             // $renderJob->left_seconds = $content['renderStatus']['etlSec'];
             $renderJob->updated_at = isset($content['updatedAt']) ? date('Y-m-d H:i:s', strtotime($content['updatedAt'])) : null;
 

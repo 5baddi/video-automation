@@ -339,8 +339,8 @@ class VideoAutomationController extends Controller
 
         // Ignore exists media
         $existsTemplateMedia = TemplateMedia::where(['template_id' => $customTemplate->id, 'placeholder' => $placeholder]);
-        if(!is_null($existsTemplateMedia))
-            return response()->json(['status' => 'bad request', 'message' => 'This media already exists for this template!'], 400);
+        // if(!is_null($existsTemplateMedia))
+            // return response()->json(['status' => 'bad request', 'message' => 'This media already exists for this template!'], 400);
 
         // Add the template medias
         $templateMedia = new TemplateMedia();
@@ -390,11 +390,11 @@ class VideoAutomationController extends Controller
                 // Parse the target path and file names
                 $targetTemplatePath = AutomationApp::TEMPLATES_DIRECTORY_NAME . DIRECTORY_SEPARATOR . $customTemplate->id . DIRECTORY_SEPARATOR . 'defaults';
                 $defaultFileName = uniqid() . '_' . $request->file('default')->getClientOriginalName();
-                
+
                 // Upload the demo video
                 $request->file('default')->storeAs($targetTemplatePath, $defaultFileName, 'public');
                 $templateMedia->default_value = route('cdn.cutomTemplate.files', ['collection' =>  'defaults', 'customTemplateID' => $customTemplate->id, 'fileName' => $defaultFileName]);
-                $templateMedia->format = pathinfo($templateMedia->default_value, PATHINFO_EXTENSION);
+                $templateMedia->format = $request->file('default')->getMimeType();
             }catch(\Exception $ex){
                 throw new \Exception("Media thumbnail are not allowed or damaged!");
             }

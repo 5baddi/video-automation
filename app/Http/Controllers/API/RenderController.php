@@ -325,7 +325,7 @@ class RenderController extends Controller
                         // Validate the footage
                         $validation = Validator::make([$placeholder => $request->file($placeholder)], [
                             // $placeholder    =>  'nullable|mimes:jpg,jpeg,bmp,png,gif,audio/mpeg,mpga,mp3,wav',
-                            $placeholder    =>  'nullable|mimes:' . (isset($media->format) ? $media->format : 'jpg,jpeg,bmp,png,gif,audio/mpeg,mpga,mp3,wav'),
+                            $placeholder    =>  'mimes:' . (isset($media->format) ? $media->format . (isset(explode('/', $media->format)[1]) ? ',' . explode('/', $media->format)[1] : '') : 'jpg,jpeg,bmp,png,gif,audio/mpeg,mpga,mp3,wav'),
                         ]);
                         // Ignore not valid format for the current footage
                         if($validation->fails())
@@ -408,7 +408,7 @@ class RenderController extends Controller
             $videoData = [
                 "template"  =>  [
                     "src"               =>  env('DEFAULT_TEMPLATES_DIRECTORY', CustomTemplate::DEFAULT_TEMPLATES_PATH) . $customTemplate->id . '/' . $customTemplate->id . '.aep',
-                    "composition"       =>  "LANDSCAPE",
+                    "composition"       =>  strtoupper($customTemplate->rotation),
                     "settingsTemplate"  =>  "Best Settings",
                     "outputModule"      =>  "Lossless",
                     "continueOnMissing" =>  true
@@ -422,7 +422,7 @@ class RenderController extends Controller
                             "output"    => $finalOutputName,
                             "params"    =>  [
                                 "-vcodec"   =>  "libx264",
-                                "-r"        =>  25
+                                "-r"        =>  30
                             ]
                         ], 
                         [
